@@ -1,0 +1,54 @@
+# Python cache & build
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Virtual environment
+venv/
+.env/
+.venv/
+env/
+ENV/
+pip-wheel-metadata/
+
+# Logs
+# *logs/
+# *.log
+
+# IDE settings
+.vscode/
+.idea/
+*.swp
+
+# Environment variables
+.env
+.env.dev
+.env.prod
+.env.local
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Coverage & test
+.coverage
+htmlcov/
+.tox/
+pytest_cache/
+
+# Jupyter notebooks checkpoints
+.ipynb_checkpoints/
+
+# Cache
+.cache/
+__cache__/
+
+# Docker (if you containerize later)
+*.pid
+*.seed
+*.pid.lock
