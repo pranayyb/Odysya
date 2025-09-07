@@ -15,8 +15,9 @@ load_dotenv()
 
 
 class MCPClient:
-    """Base interface for MCP clients."""
-
+    """
+    unified interface for all mcp clients.
+    """
     def __init__(self, api_key_env: str = "GROQ_API_KEY"):
         self.session: Optional[ClientSession] = None
         self.exit_stack = AsyncExitStack()
@@ -25,7 +26,6 @@ class MCPClient:
         self.client_name = "Generic"
 
     async def connect(self, server_script_path: str):
-        """Connect to an MCP server."""
         server_params = StdioServerParameters(
             command="uv", args=["run", "-m", server_script_path], env=None
         )
@@ -48,7 +48,6 @@ class MCPClient:
             logging.info(f"- {tool.name}: {tool.description}")
 
     async def process_query(self, query: str) -> str:
-        """Generic tool call + summarization pipeline."""
         messages = [{"role": "user", "content": query}]
 
         available_tools = [
@@ -63,7 +62,6 @@ class MCPClient:
             for tool in self.tools
         ]
 
-        # Step 1: Ask Groq to decide tool usage
         response = self.groq.chat.completions.create(
             messages=messages,
             model="llama-3.3-70b-versatile",
@@ -101,7 +99,6 @@ class MCPClient:
                     }
                 )
 
-            # Step 2: Summarize result for user
             followup = self.groq.chat.completions.create(
                 messages=messages
                 + [
@@ -120,7 +117,6 @@ class MCPClient:
         return "\n".join(output)
 
     async def chat_loop(self):
-        """Interactive CLI loop."""
         print(f"\n{self.client_name} Client Started! Type 'quit' to exit.")
 
         while True:

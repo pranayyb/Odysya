@@ -6,7 +6,7 @@ from interfaces.mcp_client_interface import MCPClient
 class EventMCPClient(MCPClient):
     def __init__(self):
         super().__init__()
-        self.client_name
+        self.client_name = "Event"
 
 
 async def main():
