@@ -6,3 +6,14 @@ from .transport import Transport
 from .weather import Weather
 from .event import Event
 from .agent_response import AgentResponse
+
+__all__ = [
+    "TripRequest",
+    "Itinerary",
+    "Hotel",
+    "Restaurant",
+    "Transport",
+    "Weather",
+    "Event",
+    "AgentResponse",
+]
