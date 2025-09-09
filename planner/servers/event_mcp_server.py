@@ -140,7 +140,7 @@ class EventMCPServer(MCPServer):
 
     def format_event(self, e: dict) -> str:
         return f"""
-        🎉 Event {e['id']}
+        Event {e['id']}
         Name: {e['name']}
         Type: {e['type']}
         Location: {e['location']}
