@@ -21,5 +21,3 @@ class RestaurantTools(AgentToolInterface):
             return f"Error: {e}"
         finally:
             await self.client.cleanup()
-
-

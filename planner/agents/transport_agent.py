@@ -4,7 +4,8 @@ from typing import TypedDict, List, Optional
 from langchain.tools import Tool
 from langchain_groq import ChatGroq
 from langchain import hub
-from langchain.agents import create_react_agent, AgentExecutor
+from langchain.agents import AgentExecutor
+from langgraph.prebuilt import create_react_agent
 from langchain.prompts import PromptTemplate
 
 
@@ -45,9 +46,10 @@ modified_prompt = PromptTemplate(
 )
 
 transport_agent = create_react_agent(
-    llm=llm,
+    model=llm,
     tools=tools,
     prompt=modified_prompt,
+    name="transport_agent",
 )
 
 transport_executor = AgentExecutor.from_agent_and_tools(
