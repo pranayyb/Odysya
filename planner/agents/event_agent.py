@@ -1,101 +1,56 @@
 import asyncio
 import os
-from typing import TypedDict, List, Optional
-from langchain.tools import Tool
 from langchain_groq import ChatGroq
-from langchain import hub
-from langchain.agents import create_react_agent, AgentExecutor
-from langchain.prompts import PromptTemplate
-
-
-class EventState(TypedDict):
-    query: str
-    thoughts: List[str]
-    tool_calls: List[str]
-    results: Optional[List[str]]
-    final_answer: Optional[str]
-
-
+from langgraph.prebuilt import create_react_agent
+from langchain.tools import StructuredTool
 from tools.event_tools import EventTools
 
 tools_client = EventTools()
 
-tools = [
-    Tool(
-        name="search_event",
-        description="Search for event information in a given city",
-        func=lambda city: asyncio.run(tools_client.run(f"search events in {city}")),
-    ),
-]
 
-llm = ChatGroq(model="llama-3.1-8b-instant", api_key=os.getenv("GROQ_API_KEY"))
+def search_events(prompt: str) -> str:
+    return asyncio.run(tools_client.run(prompt))
 
-react_prompt = hub.pull("hwchase17/react")
 
-final_answer_instruction = """
-You are an agent that can call tools to help answer the user's query.
-Once you have enough information, or if you cannot use more tools, you MUST provide a final answer.
-Always format it exactly like: Final Answer: <your answer here>
-Do not keep reasoning endlessly.
-"""
+search_events_tool = StructuredTool.from_function(
+    func=search_events,
+    name="search_events",
+    description="Search for events. Accepts a single prompt string; client handles extraction.",
+)
 
-modified_prompt = PromptTemplate(
-    template=final_answer_instruction + react_prompt.template,
-    input_variables=react_prompt.input_variables,
+llm = ChatGroq(
+    model="llama-3.1-8b-instant",
+    api_key=os.getenv("GROQ_API_KEY"),
 )
 
 event_agent = create_react_agent(
-    llm=llm,
-    tools=tools,
-    prompt=modified_prompt,
+    model=llm,
+    tools=[search_events_tool],
+    name="event_agent",
+    prompt="""
+        You are an event search agent with STRICT limitations.
+        
+        WHAT YOU CAN DO:
+        - Search for events using the search_events tool ONLY
+        - Handle queries about: events, concerts, shows, festivals, activities, entertainment
+        
+        WHAT YOU CANNOT DO:
+        - Book tickets or make reservations (you can only search)
+        - Provide information about restaurants, hotels, weather, or transport
+        - Answer questions without using your tool
+        - Invent or hallucinate event information
+        
+        INSTRUCTIONS:
+        1. If the query is NOT about events/entertainment, respond: "This query is not about events."
+        2. For event queries, extract ONLY the event-related portion before calling search_events
+        3. Use search_events tool for ALL event queries - never answer directly
+        4. Maximum 3 tool iterations, then return your best result
+        5. Output ONLY the exact response from the search_events tool
+        6. If asked about booking/tickets, clarify you can only search, not book
+        
+        Examples:
+        - "Find concerts in NYC" → Use tool with this exact query
+        - "Book tickets for a concert" → Use tool with "concerts" + clarify no booking capability
+        - "What's the weather and any events?" → Respond "This query contains non-event elements. I can only help with: events"
+    """,
 )
-
-event_executor = AgentExecutor.from_agent_and_tools(
-    agent=event_agent,
-    tools=tools,
-    verbose=True,
-    max_iterations=3,
-    return_intermediate_steps=True,
-)
-
-
-async def event_node(state: EventState) -> EventState:
-    query = state["query"]
-
-    result = await event_executor.ainvoke({"input": query})
-
-    if result.get("output") and "stopped" not in result["output"].lower():
-        final_output = result["output"]
-    elif result.get("intermediate_steps"):
-        last_step = result["intermediate_steps"][-1]
-        action, observation = last_step
-        final_output = observation
-    else:
-        final_output = "No output generated."
-
-    return {
-        "query": query,
-        "thoughts": state.get("thoughts", []) + [str(result)],
-        "tool_calls": state.get("tool_calls", []),
-        "results": [final_output],
-        "final_answer": final_output,
-    }
-
-
-# example  run
-if __name__ == "__main__":
-
-    async def test():
-        init_state: EventState = {
-            "query": "events in london",
-            "thoughts": [],
-            "tool_calls": [],
-            "results": None,
-            "final_answer": None,
-        }
-
-        new_state = await event_node(init_state)
-        print("=== Final Answer ===")
-        print("Final Answer:", new_state["final_answer"])
-
-    asyncio.run(test())

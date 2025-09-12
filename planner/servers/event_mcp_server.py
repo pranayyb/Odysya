@@ -19,7 +19,7 @@ class EventMCPServer(MCPServer):
                 "id": "evt_101",
                 "name": "Coldplay Live Concert",
                 "type": "Concert",
-                "location": "Wembley Stadium, London",
+                "location": "Wembley Stadium, New York",
                 "date": "2025-12-05",
                 "time": "19:00",
                 "price": 120.00,

@@ -1,103 +1,56 @@
 import asyncio
 import os
-from typing import TypedDict, List, Optional
-from langchain.tools import Tool
+from langchain.tools import StructuredTool
 from langchain_groq import ChatGroq
-from langchain import hub
-from langchain.agents import AgentExecutor
 from langgraph.prebuilt import create_react_agent
-from langchain.prompts import PromptTemplate
-
-
-class TransportState(TypedDict):
-    query: str
-    thoughts: List[str]
-    tool_calls: List[str]
-    results: Optional[List[str]]
-    final_answer: Optional[str]
-
-
 from tools.transport_tools import TransportTools
 
 tools_client = TransportTools()
 
-tools = [
-    Tool(
-        name="search_transport",
-        description="Search for transport options in a given city",
-        func=lambda city: asyncio.run(tools_client.run(f"search transport in {city}")),
-    ),
-]
 
-llm = ChatGroq(model="llama-3.1-8b-instant", api_key=os.getenv("GROQ_API_KEY"))
+def search_transports(prompt: str) -> str:
+    return asyncio.run(tools_client.run(prompt))
 
-react_prompt = hub.pull("hwchase17/react")
 
-final_answer_instruction = """
-You are an agent that can call tools to help answer the user's query.
-Once you have enough information, or if you cannot use more tools, you MUST provide a final answer.
-Always format it exactly like: Final Answer: <your answer here>
-Do not keep reasoning endlessly.
-"""
+search_transports_tool = StructuredTool.from_function(
+    func=search_transports,
+    name="search_transports",
+    description="Search for transport options. Accepts a single prompt string; client handles extraction.",
+)
 
-modified_prompt = PromptTemplate(
-    template=final_answer_instruction + react_prompt.template,
-    input_variables=react_prompt.input_variables,
+llm = ChatGroq(
+    model="llama-3.1-8b-instant",
+    api_key=os.getenv("GROQ_API_KEY"),
 )
 
 transport_agent = create_react_agent(
     model=llm,
-    tools=tools,
-    prompt=modified_prompt,
+    tools=[search_transports_tool],
     name="transport_agent",
+    prompt="""
+        You are a transport search agent with STRICT limitations.
+        
+        WHAT YOU CAN DO:
+        - Search for transport options using the search_transports tool ONLY
+        - Handle queries about: transport, travel methods, public transport, flights, trains, buses
+        
+        WHAT YOU CANNOT DO:
+        - Book tickets or make reservations (you can only search)
+        - Provide information about restaurants, events, weather, or hotels
+        - Answer questions without using your tool
+        - Invent or hallucinate transport information
+        
+        INSTRUCTIONS:
+        1. If the query is NOT about transport/travel, respond: "This query is not about transport."
+        2. For transport queries, extract ONLY the transport-related portion before calling search_transports
+        3. Use search_transports tool for ALL transport queries - never answer directly
+        4. Maximum 3 tool iterations, then return your best result
+        5. Output ONLY the exact response from the search_transports tool
+        6. If asked about booking/tickets, clarify you can only search, not book
+        
+        Examples:
+        - "Find flights to NYC" → Use tool with this exact query
+        - "Book a flight ticket" → Use tool with "flights" + clarify no booking capability
+        - "What's the weather and transport options?" → Respond "This query contains non-transport elements. I can only help with: transport"
+    """,
 )
-
-transport_executor = AgentExecutor.from_agent_and_tools(
-    agent=transport_agent,
-    tools=tools,
-    verbose=True,
-    max_iterations=3,
-    return_intermediate_steps=True,
-)
-
-
-async def transport_node(state: TransportState) -> TransportState:
-    query = state["query"]
-
-    result = await transport_executor.ainvoke({"input": query})
-
-    if result.get("output") and "stopped" not in result["output"].lower():
-        final_output = result["output"]
-    elif result.get("intermediate_steps"):
-        last_step = result["intermediate_steps"][-1]
-        action, observation = last_step
-        final_output = observation
-    else:
-        final_output = "No output generated."
-
-    return {
-        "query": query,
-        "thoughts": state.get("thoughts", []) + [str(result)],
-        "tool_calls": state.get("tool_calls", []),
-        "results": [final_output],
-        "final_answer": final_output,
-    }
-
-
-# example  run
-if __name__ == "__main__":
-
-    async def test():
-        init_state: TransportState = {
-            "query": "Find me an flights in paris",
-            "thoughts": [],
-            "tool_calls": [],
-            "results": None,
-            "final_answer": None,
-        }
-
-        new_state = await transport_node(init_state)
-        print("=== Final Answer ===")
-        print("Final Answer:", new_state["final_answer"])
-
-    asyncio.run(test())

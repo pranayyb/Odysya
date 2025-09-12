@@ -1,101 +1,56 @@
 import asyncio
 import os
-from typing import TypedDict, List, Optional
-from langchain.tools import Tool
 from langchain_groq import ChatGroq
-from langchain import hub
-from langchain.agents import create_react_agent, AgentExecutor
-from langchain.prompts import PromptTemplate
-
-
-class WeatherState(TypedDict):
-    query: str
-    thoughts: List[str]
-    tool_calls: List[str]
-    results: Optional[List[str]]
-    final_answer: Optional[str]
-
-
+from langgraph.prebuilt import create_react_agent
 from tools.weather_tools import WeatherTools
+from langchain.tools import StructuredTool
 
 tools_client = WeatherTools()
 
-tools = [
-    Tool(
-        name="search_weather",
-        description="Search for weather information in a given city",
-        func=lambda city: asyncio.run(tools_client.run(f"search weather in {city}")),
-    ),
-]
 
-llm = ChatGroq(model="llama-3.1-8b-instant", api_key=os.getenv("GROQ_API_KEY"))
+def get_weather(prompt: str) -> str:
+    return asyncio.run(tools_client.run(prompt))
 
-react_prompt = hub.pull("hwchase17/react")
 
-final_answer_instruction = """
-You are an agent that can call tools to help answer the user's query.
-Once you have enough information, or if you cannot use more tools, you MUST provide a final answer.
-Always format it exactly like: Final Answer: <your answer here>
-Do not keep reasoning endlessly.
-"""
+get_weather_tool = StructuredTool.from_function(
+    func=get_weather,
+    name="get_weather",
+    description="Get the current weather for a given location. Accepts a single prompt string; client handles extraction.",
+)
 
-modified_prompt = PromptTemplate(
-    template=final_answer_instruction + react_prompt.template,
-    input_variables=react_prompt.input_variables,
+llm = ChatGroq(
+    model="llama-3.1-8b-instant",
+    api_key=os.getenv("GROQ_API_KEY"),
 )
 
 weather_agent = create_react_agent(
-    llm=llm,
-    tools=tools,
-    prompt=modified_prompt,
+    model=llm,
+    tools=[get_weather_tool],
+    name="weather_agent",
+    prompt="""
+        You are a weather information agent with STRICT limitations.
+        
+        WHAT YOU CAN DO:
+        - Get weather information using the get_weather tool ONLY
+        - Handle queries about: weather, temperature, forecast, climate conditions
+        
+        WHAT YOU CANNOT DO:
+        - Provide travel advice or recommendations based on weather
+        - Provide information about restaurants, hotels, events, or transport
+        - Answer questions without using your tool
+        - Invent or hallucinate weather information
+        
+        INSTRUCTIONS:
+        1. If the query is NOT about weather, respond: "This query is not about weather."
+        2. For weather queries, extract ONLY the weather-related portion before calling get_weather
+        3. Use get_weather tool for ALL weather queries - never answer directly
+        4. Maximum 3 tool iterations, then return your best result
+        5. Output ONLY the exact response from the get_weather tool
+        6. Stick to weather data only, do not provide travel recommendations
+        
+        Examples:
+        - "What's the weather in NYC?" → Use tool with this exact query
+        - "Weather forecast for planning trip" → Use tool with "weather forecast" + focus only on weather data
+        - "What are good restaurants and weather?" → Respond "This query contains non-weather elements. I can only help with: weather"
+    """,
 )
-
-weather_executor = AgentExecutor.from_agent_and_tools(
-    agent=weather_agent,
-    tools=tools,
-    verbose=True,
-    max_iterations=3,
-    return_intermediate_steps=True,
-)
-
-
-async def weather_node(state: WeatherState) -> WeatherState:
-    query = state["query"]
-
-    result = await weather_executor.ainvoke({"input": query})
-
-    if result.get("output") and "stopped" not in result["output"].lower():
-        final_output = result["output"]
-    elif result.get("intermediate_steps"):
-        last_step = result["intermediate_steps"][-1]
-        action, observation = last_step
-        final_output = observation
-    else:
-        final_output = "No output generated."
-
-    return {
-        "query": query,
-        "thoughts": state.get("thoughts", []) + [str(result)],
-        "tool_calls": state.get("tool_calls", []),
-        "results": [final_output],
-        "final_answer": final_output,
-    }
-
-
-# example  run
-if __name__ == "__main__":
-
-    async def test():
-        init_state: WeatherState = {
-            "query": "what is the weather in New York?",
-            "thoughts": [],
-            "tool_calls": [],
-            "results": None,
-            "final_answer": None,
-        }
-
-        new_state = await weather_node(init_state)
-        print("=== Final Answer ===")
-        print("Final Answer:", new_state["final_answer"])
-
-    asyncio.run(test())

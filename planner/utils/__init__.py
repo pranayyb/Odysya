@@ -10,6 +10,7 @@ from .error_handler import (
 from .http_client import get
 from .logger import get_logger
 from .validator import validate_trip_request
+from .pretty_print import pretty_print_messages
 
 __all__ = [
     "Config",
@@ -22,4 +23,5 @@ __all__ = [
     "get",
     "get_logger",
     "validate_trip_request",
+    "pretty_print_messages",
 ]

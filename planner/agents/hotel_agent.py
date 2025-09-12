@@ -1,101 +1,56 @@
 import asyncio
 import os
-from typing import TypedDict, List, Optional
-from langchain.tools import Tool
 from langchain_groq import ChatGroq
-from langchain import hub
-from langchain.agents import create_react_agent, AgentExecutor
-from langchain.prompts import PromptTemplate
-
-
-class HotelState(TypedDict):
-    query: str
-    thoughts: List[str]
-    tool_calls: List[str]
-    results: Optional[List[str]]
-    final_answer: Optional[str]
-
-
+from langgraph.prebuilt import create_react_agent
 from tools.hotel_tools import HotelTools
+from langchain.tools import StructuredTool
 
 tools_client = HotelTools()
 
-tools = [
-    Tool(
-        name="search_hotels",
-        description="Search for hotel information in a given city",
-        func=lambda city: asyncio.run(tools_client.run(f"search hotels in {city}")),
-    ),
-]
 
-llm = ChatGroq(model="llama-3.1-8b-instant", api_key=os.getenv("GROQ_API_KEY"))
+def search_hotels(prompt: str):
+    return asyncio.run(tools_client.run(prompt))
 
-react_prompt = hub.pull("hwchase17/react")
 
-final_answer_instruction = """
-You are an agent that can call tools to help answer the user's query.
-Once you have enough information, or if you cannot use more tools, you MUST provide a final answer.
-Always format it exactly like: Final Answer: <your answer here>
-Do not keep reasoning endlessly.
-"""
+search_hotels_tool = StructuredTool.from_function(
+    func=search_hotels,
+    name="search_hotels",
+    description="Search for hotels. Accepts a single prompt string; client handles extraction.",
+)
 
-modified_prompt = PromptTemplate(
-    template=final_answer_instruction + react_prompt.template,
-    input_variables=react_prompt.input_variables,
+llm = ChatGroq(
+    model="llama-3.1-8b-instant",
+    api_key=os.getenv("GROQ_API_KEY"),
 )
 
 hotel_agent = create_react_agent(
-    llm=llm,
-    tools=tools,
-    prompt=modified_prompt,
+    model=llm,
+    tools=[search_hotels_tool],
+    name="hotel_agent",
+    prompt="""
+        You are a hotel search agent with STRICT limitations.
+        
+        WHAT YOU CAN DO:
+        - Search for hotels using the search_hotels tool ONLY
+        - Handle queries about: hotels, accommodations, lodging, stays
+        
+        WHAT YOU CANNOT DO:
+        - Make reservations or bookings (you can only search)
+        - Provide information about restaurants, events, weather, or transport
+        - Answer questions without using your tool
+        - Invent or hallucinate hotel information
+        
+        INSTRUCTIONS:
+        1. If the query is NOT about hotels/accommodations, respond: "This query is not about hotels."
+        2. For hotel queries, extract ONLY the hotel-related portion before calling search_hotels
+        3. Use search_hotels tool for ALL hotel queries - never answer directly
+        4. Maximum 3 tool iterations, then return your best result
+        5. Output ONLY the exact response from the search_hotels tool
+        6. If asked about booking/reservations, clarify you can only search, not book
+        
+        Examples:
+        - "Find hotels in NYC" → Use tool with this exact query
+        - "Book a hotel room" → Use tool with "hotels" + clarify no booking capability
+        - "What's the weather and good hotels?" → Respond "This query contains non-hotel elements. I can only help with: hotels"
+    """,
 )
-
-hotel_executor = AgentExecutor.from_agent_and_tools(
-    agent=hotel_agent,
-    tools=tools,
-    verbose=True,
-    max_iterations=3,
-    return_intermediate_steps=True,
-)
-
-
-async def hotel_node(state: HotelState) -> HotelState:
-    query = state["query"]
-
-    result = await hotel_executor.ainvoke({"input": query})
-
-    if result.get("output") and "stopped" not in result["output"].lower():
-        final_output = result["output"]
-    elif result.get("intermediate_steps"):
-        last_step = result["intermediate_steps"][-1]
-        action, observation = last_step
-        final_output = observation
-    else:
-        final_output = "No output generated."
-
-    return {
-        "query": query,
-        "thoughts": state.get("thoughts", []) + [str(result)],
-        "tool_calls": state.get("tool_calls", []),
-        "results": [final_output],
-        "final_answer": final_output,
-    }
-
-
-# example  run
-if __name__ == "__main__":
-
-    async def test():
-        init_state: HotelState = {
-            "query": "hotel in paris under 200$",
-            "thoughts": [],
-            "tool_calls": [],
-            "results": None,
-            "final_answer": None,
-        }
-
-        new_state = await hotel_node(init_state)
-        print("=== Final Answer ===")
-        print("Final Answer:", new_state["final_answer"])
-
-    asyncio.run(test())

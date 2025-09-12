@@ -1,59 +1,14 @@
 import os
 from dotenv import load_dotenv
-from agents.restaurant_agent import restaurant_agent
-from langchain_groq import ChatGroq
+from agents import *
 from langchain_google_genai import ChatGoogleGenerativeAI
+from langgraph_supervisor import create_supervisor
+from utils.pretty_print import pretty_print_messages
 
 load_dotenv()
 
-from langchain_core.messages import convert_to_messages
-
-
-def pretty_print_message(message, indent=False):
-    pretty_message = message.pretty_repr(html=True)
-    if not indent:
-        print(pretty_message)
-        return
-
-    indented = "\n".join("\t" + c for c in pretty_message.split("\n"))
-    print(indented)
-
-
-def pretty_print_messages(update, last_message=False):
-    is_subgraph = False
-    if isinstance(update, tuple):
-        ns, update = update
-        if len(ns) == 0:
-            return
-
-        graph_id = ns[-1].split(":")[0]
-        print(f"Update from subgraph {graph_id}:")
-        print("\n")
-        is_subgraph = True
-
-    for node_name, node_update in update.items():
-        update_label = f"Update from node {node_name}:"
-        if is_subgraph:
-            update_label = "\t" + update_label
-
-        print(update_label)
-        print("\n")
-
-        messages = convert_to_messages(node_update["messages"])
-        if last_message:
-            messages = messages[-1:]
-
-        for m in messages:
-            pretty_print_message(m, indent=is_subgraph)
-        print("\n")
-
 
 os.environ["GROQ_API_KEY"] = os.getenv("GROQ_API_KEY")
-os.environ["TAVILY_API_KEY"] = os.getenv("TAVILY_API_KEY")
-
-
-from langgraph_supervisor import create_supervisor
-
 
 gemini_model = ChatGoogleGenerativeAI(
     model="gemini-1.5-flash",  # or "gemini-1.5-pro"
@@ -61,17 +16,34 @@ gemini_model = ChatGoogleGenerativeAI(
 )
 # print(gemini_model.invoke("whats up?").content)
 
-
 supervisor = create_supervisor(
     model=gemini_model,
-    agents=[restaurant_agent],
+    agents=[restaurant_agent, event_agent, weather_agent, hotel_agent, transport_agent],
     prompt=(
-        """You are a supervisor managing one agent:
-        - restaurant_agent: The agent is a restaurant agent.
-        - You must delegate all restaurant queries to the agent.
-        - Do not generate or invent any restaurants yourself.
-        - Only output the result provided by the agent.
+        """
+        You are a precise routing supervisor managing specialized agents. Each agent can ONLY handle its specific domain and has limited tools.
 
+        AGENT CAPABILITIES:
+        - restaurant_agent: ONLY restaurants, dining, food places. Tool: search_restaurants
+        - event_agent: ONLY events, concerts, shows, activities. Tool: search_events  
+        - weather_agent: ONLY weather, forecast, temperature. Tool: get_weather
+        - hotel_agent: ONLY hotels, accommodations, lodging. Tool: search_hotels
+        - transport_agent: ONLY transport, travel methods, public transport. Tool: search_transports
+
+        ROUTING RULES:
+        1. Analyze the user query and identify ONLY the specific parts each agent can handle
+        2. Extract and send ONLY the relevant portion to each agent (e.g., for "restaurants in Paris", send only "restaurants in Paris" to restaurant_agent)
+        3. Do NOT send queries about unavailable services (no booking, no reservations, no detailed planning)
+        4. If an agent cannot handle a request, it will respond appropriately
+        5. Delegate tasks sequentially, not in parallel
+        6. Each agent has exactly one tool - do not expect capabilities beyond their tool scope
+
+        EXAMPLE ROUTING:
+        - "Find Italian restaurants and book a table" → restaurant_agent gets "Find Italian restaurants" (ignore booking part)
+        - "Weather and hotels in NYC" → weather_agent gets "weather in NYC", hotel_agent gets "hotels in NYC"
+        - "Plan my trip" → Break down to specific searchable items only
+
+        Be precise: only route what each agent can actually search for with their available tools.
         """
     ),
     add_handoff_back_messages=True,
@@ -80,16 +52,33 @@ supervisor = create_supervisor(
 
 
 for chunk in supervisor.stream(
+    # {
+    #     "messages": [
+    #         {
+    #             "role": "user",
+    #             "content": "provide italian restaurants in new york",
+    #         }
+    #     ]
+    # },
     {
         "messages": [
             {
                 "role": "user",
-                "content": "provide restaurants in Tokyo",
+                "content":  """
+                            I am planning a trip to New York next weekend. 
+                            Can you do the following for me: 
+                            1. Find some Italian restaurants in new york. 
+                            2. Suggest any music events happening there. 
+                            3. Tell me the weather forecast. 
+                            4. Recommend hotels in new york. 
+                            5. Suggest the best way to get around the city by public transport.
+                            """,
             }
         ]
     },
 ):
-    pretty_print_messages(chunk, last_message=True)
+    if chunk and "messages" in chunk:
+        pretty_print_messages(chunk, last_message=True)
 
 
 final_message_history = chunk["supervisor"]["messages"]
