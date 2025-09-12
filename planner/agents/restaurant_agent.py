@@ -1,4 +1,5 @@
 import asyncio
+import os
 from typing import TypedDict, List, Optional
 from langchain.tools import Tool
 from langchain_groq import ChatGroq
@@ -29,7 +30,7 @@ tools = [
     ),
 ]
 
-llm = ChatGroq(model="llama-3.1-8b-instant")
+llm = ChatGroq(model="llama-3.1-8b-instant", api_key=os.getenv("GROQ_API_KEY"))
 
 react_prompt = hub.pull("hwchase17/react")
 

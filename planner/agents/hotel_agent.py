@@ -1,4 +1,5 @@
 import asyncio
+import os
 from typing import TypedDict, List, Optional
 from langchain.tools import Tool
 from langchain_groq import ChatGroq
@@ -27,7 +28,7 @@ tools = [
     ),
 ]
 
-llm = ChatGroq(model="llama-3.1-8b-instant")
+llm = ChatGroq(model="llama-3.1-8b-instant", api_key=os.getenv("GROQ_API_KEY"))
 
 react_prompt = hub.pull("hwchase17/react")
 
@@ -93,7 +94,7 @@ if __name__ == "__main__":
             "final_answer": None,
         }
 
-        new_state = await weather_node(init_state)
+        new_state = await hotel_node(init_state)
         print("=== Final Answer ===")
         print("Final Answer:", new_state["final_answer"])
 
