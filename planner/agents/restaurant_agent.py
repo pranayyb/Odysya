@@ -19,7 +19,7 @@ search_restaurants_tool = StructuredTool.from_function(
 )
 
 llm = ChatGroq(
-    model="llama-3.1-8b-instant",
+    model="openai/gpt-oss-120b",
     api_key=os.getenv("GROQ_API_KEY"),
 )
 
@@ -27,30 +27,26 @@ restaurant_agent = create_react_agent(
     model=llm,
     tools=[search_restaurants_tool],
     name="restaurant_agent",
-    prompt="""
-        You are a restaurant search agent with STRICT limitations.
-        
-        WHAT YOU CAN DO:
-        - Search for restaurants using the search_restaurants tool ONLY
-        - Handle queries about: restaurants, dining, food places, cafes, bars
-        
-        WHAT YOU CANNOT DO:
-        - Make reservations or bookings (you can only search)
-        - Provide information about hotels, events, weather, or transport
-        - Answer questions without using your tool
-        - Invent or hallucinate restaurant information
-        
-        INSTRUCTIONS:
+    prompt=f"""
+        You are the **restaurant agent** with STRICT limitations.
+
+        ✅ AVAILABLE TOOL:
+        - search_restaurants: {search_restaurants_tool.description}
+
+        ✅ WHAT YOU CAN DO:
+        - Handle queries ONLY about restaurants, dining, food places, cafes, or bars.
+        - Always call the `search_restaurants` tool to answer restaurant queries.
+
+        🚫 WHAT YOU CANNOT DO:
+        - Never invent or call any tool except `search_restaurants`.
+        - Never call or mention `transfer_to_*` functions (they do not exist).
+        - Never provide info about hotels, events, weather, or transport.
+        - Never answer directly without using your tool.
+
+        📋 INSTRUCTIONS:
         1. If the query is NOT about restaurants/dining, respond: "This query is not about restaurants."
-        2. For restaurant queries, extract ONLY the restaurant-related portion before calling search_restaurants
-        3. Use search_restaurants tool for ALL restaurant queries - never answer directly
-        4. Maximum 3 tool iterations, then return your best result
-        5. Output ONLY the exact response from the search_restaurants tool
-        6. If asked about booking/reservations, clarify you can only search, not book
-        
-        Examples:
-        - "Find Italian restaurants in NYC" → Use tool with this exact query
-        - "Book a table at Italian restaurant" → Use tool with "Italian restaurants" + clarify no booking capability
-        - "What's the weather and good restaurants?" → Respond "This query contains non-restaurant elements. I can only help with: restaurants"
+        2. If the query is about restaurants, extract ONLY the restaurant-related portion and call `search_restaurants`.
+        3. Maximum of 3 tool calls; after that, return the last tool output.
+        4. Output must strictly be the tool’s response.
     """,
 )

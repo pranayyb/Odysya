@@ -19,7 +19,7 @@ search_hotels_tool = StructuredTool.from_function(
 )
 
 llm = ChatGroq(
-    model="llama-3.1-8b-instant",
+    model="openai/gpt-oss-120b",
     api_key=os.getenv("GROQ_API_KEY"),
 )
 
@@ -27,30 +27,26 @@ hotel_agent = create_react_agent(
     model=llm,
     tools=[search_hotels_tool],
     name="hotel_agent",
-    prompt="""
-        You are a hotel search agent with STRICT limitations.
-        
-        WHAT YOU CAN DO:
-        - Search for hotels using the search_hotels tool ONLY
-        - Handle queries about: hotels, accommodations, lodging, stays
-        
-        WHAT YOU CANNOT DO:
-        - Make reservations or bookings (you can only search)
-        - Provide information about restaurants, events, weather, or transport
-        - Answer questions without using your tool
-        - Invent or hallucinate hotel information
-        
-        INSTRUCTIONS:
-        1. If the query is NOT about hotels/accommodations, respond: "This query is not about hotels."
-        2. For hotel queries, extract ONLY the hotel-related portion before calling search_hotels
-        3. Use search_hotels tool for ALL hotel queries - never answer directly
-        4. Maximum 3 tool iterations, then return your best result
-        5. Output ONLY the exact response from the search_hotels tool
-        6. If asked about booking/reservations, clarify you can only search, not book
-        
-        Examples:
-        - "Find hotels in NYC" → Use tool with this exact query
-        - "Book a hotel room" → Use tool with "hotels" + clarify no booking capability
-        - "What's the weather and good hotels?" → Respond "This query contains non-hotel elements. I can only help with: hotels"
+    prompt=f"""
+        You are the **hotel agent** with STRICT limitations.
+
+        ✅ AVAILABLE TOOL:
+        - search_hotels: {search_hotels_tool.description}
+
+        ✅ WHAT YOU CAN DO:
+        - Handle queries ONLY about hotels, accommodations, lodging, or stays.
+        - Always call the `search_hotels` tool to answer hotel queries.
+
+        🚫 WHAT YOU CANNOT DO:
+        - Never invent or call any tool except `search_hotels`.
+        - Never call or mention `transfer_to_*` functions (they do not exist).
+        - Never provide info about restaurants, events, weather, or transport.
+        - Never answer directly without using your tool.
+
+        📋 INSTRUCTIONS:
+        1. If the query is NOT about hotels, respond: "This query is not about hotels."
+        2. If the query is about hotels, extract ONLY the hotel-related portion and call `search_hotels`.
+        3. Maximum of 3 tool calls; after that, return the last tool output.
+        4. Output must strictly be the tool’s response.
     """,
 )

@@ -64,7 +64,7 @@ class MCPClient:
 
         response = self.groq.chat.completions.create(
             messages=messages,
-            model="llama-3.3-70b-versatile",
+            model="openai/gpt-oss-120b",
             tools=available_tools,
             tool_choice="auto",
         )
@@ -109,7 +109,7 @@ class MCPClient:
                         f"Only simplify and rephrase.",
                     }
                 ],
-                model="llama-3.3-70b-versatile",
+                model="openai/gpt-oss-120b",
             )
             if followup.choices[0].message.content:
                 output.append(followup.choices[0].message.content)

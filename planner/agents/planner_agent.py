@@ -4,6 +4,9 @@ from agents import *
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph_supervisor import create_supervisor
 from utils.pretty_print import pretty_print_messages
+from langchain.schema import AIMessage
+from langchain_core.messages import HumanMessage
+from langchain_core.messages import ToolMessage
 
 load_dotenv()
 
@@ -19,35 +22,25 @@ gemini_model = ChatGoogleGenerativeAI(
 supervisor = create_supervisor(
     model=gemini_model,
     agents=[restaurant_agent, event_agent, weather_agent, hotel_agent, transport_agent],
-    prompt=(
-        """
-        You are a precise routing supervisor managing specialized agents. Each agent can ONLY handle its specific domain and has limited tools.
+    prompt="""
+        You are a routing supervisor. Your ONLY job is to delegate queries to the correct agent(s).
 
-        AGENT CAPABILITIES:
-        - restaurant_agent: ONLY restaurants, dining, food places. Tool: search_restaurants
-        - event_agent: ONLY events, concerts, shows, activities. Tool: search_events  
-        - weather_agent: ONLY weather, forecast, temperature. Tool: get_weather
-        - hotel_agent: ONLY hotels, accommodations, lodging. Tool: search_hotels
-        - transport_agent: ONLY transport, travel methods, public transport. Tool: search_transports
-
-        ROUTING RULES:
-        1. Analyze the user query and identify ONLY the specific parts each agent can handle
-        2. Extract and send ONLY the relevant portion to each agent (e.g., for "restaurants in Paris", send only "restaurants in Paris" to restaurant_agent)
-        3. Do NOT send queries about unavailable services (no booking, no reservations, no detailed planning)
-        4. If an agent cannot handle a request, it will respond appropriately
-        5. Delegate tasks sequentially, not in parallel
-        6. Each agent has exactly one tool - do not expect capabilities beyond their tool scope
-
-        EXAMPLE ROUTING:
-        - "Find Italian restaurants and book a table" → restaurant_agent gets "Find Italian restaurants" (ignore booking part)
-        - "Weather and hotels in NYC" → weather_agent gets "weather in NYC", hotel_agent gets "hotels in NYC"
-        - "Plan my trip" → Break down to specific searchable items only
-
-        Be precise: only route what each agent can actually search for with their available tools.
-        """
-    ),
+        RULES:
+        - Never summarize or produce your own "Final Answer".
+        - Never invent or call tools like 'transfer_to_X'. They do not exist.
+        - Only route queries to one or more of these agents:
+            - restaurant_agent
+            - event_agent
+            - weather_agent
+            - hotel_agent
+            - transport_agent
+        - Extract only the relevant portion of the query for each agent.
+        - If multiple agents are needed, call them sequentially and return their outputs combined as-is.
+        - Do NOT rephrase, reword, or summarize agent outputs. Return their raw responses only.
+        - If no relevant agent exists, return: "No available agent can handle this request."
+    """,
     add_handoff_back_messages=True,
-    output_mode="full_history",
+    output_mode="full_history",  # ensures you see every step
 ).compile()
 
 
@@ -64,7 +57,7 @@ for chunk in supervisor.stream(
         "messages": [
             {
                 "role": "user",
-                "content":  """
+                "content": """
                             I am planning a trip to New York next weekend. 
                             Can you do the following for me: 
                             1. Find some Italian restaurants in new york. 
@@ -80,7 +73,14 @@ for chunk in supervisor.stream(
     if chunk and "messages" in chunk:
         pretty_print_messages(chunk, last_message=True)
 
-
+data = []
 final_message_history = chunk["supervisor"]["messages"]
 print("=== Final Answer ===")
-print("Final Answer:", final_message_history[-1].content)
+# print(final_message_history)
+for msg in final_message_history:
+    if isinstance(msg, AIMessage):
+        data.append(msg.content)
+# print("Final Answer:", final_message_history[-1].content)
+
+
+print(gemini_model.invoke(f"with this data generate an itinerary {data}").content)
