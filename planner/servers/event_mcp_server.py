@@ -4,7 +4,7 @@ import httpx
 from mcp.server.fastmcp import FastMCP
 import logging
 import datetime
-
+from data import events_data
 from interfaces.mcp_server_interface import MCPServer
 
 
@@ -14,41 +14,7 @@ class EventMCPServer(MCPServer):
         self.EVENTS_API_BASE = "https://events-api.example.com/v1"
         self.API_KEY = "YOUR_EVENTS_API_KEY"
         self.USER_AGENT = "events-app/1.0"
-        self.MOCK_EVENTS = [
-            {
-                "id": "evt_101",
-                "name": "Coldplay Live Concert",
-                "type": "Concert",
-                "location": "Wembley Stadium, New York",
-                "date": "2025-12-05",
-                "time": "19:00",
-                "price": 120.00,
-                "currency": "GBP",
-                "organizer": "Live Nation",
-            },
-            {
-                "id": "evt_102",
-                "name": "Paris Fashion Week",
-                "type": "Exhibition",
-                "location": "Grand Palais, Paris",
-                "date": "2025-12-10",
-                "time": "10:00",
-                "price": 0.00,
-                "currency": "EUR",
-                "organizer": "Paris Fashion Council",
-            },
-            {
-                "id": "evt_103",
-                "name": "Tokyo Anime Festival",
-                "type": "Festival",
-                "location": "Tokyo Big Sight",
-                "date": "2025-12-15",
-                "time": "09:00",
-                "price": 50.00,
-                "currency": "JPY",
-                "organizer": "Anime Japan",
-            },
-        ]
+        self.MOCK_EVENTS = events_data
         self.USE_MOCK_DATA = True
 
     async def register_tools(self) -> None:

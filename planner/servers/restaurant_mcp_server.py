@@ -5,6 +5,7 @@ import logging
 import random
 import asyncio
 from interfaces.mcp_server_interface import MCPServer
+from data import restaurant_data
 
 
 class RestaurantMCPServer(MCPServer):
@@ -14,35 +15,7 @@ class RestaurantMCPServer(MCPServer):
         self.YELP_API_BASE = "https://api.yelp.com/v3"
         self.YELP_API_KEY = "YELP_API_KEY"
         self.USER_AGENT = "restaurant-app/1.0"
-        self.MOCK_RESTAURANTS = [
-            {
-                "id": "res_101",
-                "name": "Pasta Paradise",
-                "rating": 4.5,
-                "price": "$$",
-                "location": {"address1": "123 Main St", "city": "New York"},
-                "categories": [{"title": "Italian"}],
-                "phone": "+1-212-555-1234",
-            },
-            {
-                "id": "res_102",
-                "name": "Sushi World",
-                "rating": 4.7,
-                "price": "$$$",
-                "location": {"address1": "456 Sushi Ave", "city": "Tokyo"},
-                "categories": [{"title": "Japanese"}],
-                "phone": "+81-3-5555-6789",
-            },
-            {
-                "id": "res_103",
-                "name": "Curry House",
-                "rating": 4.2,
-                "price": "$",
-                "location": {"address1": "789 Spice Road", "city": "Mumbai"},
-                "categories": [{"title": "Indian"}],
-                "phone": "+91-22-5555-9876",
-            },
-        ]
+        self.MOCK_RESTAURANTS = restaurant_data
 
     async def register_tools(self) -> None:
         @self.mcp.tool()

@@ -5,6 +5,9 @@ import logging
 import datetime
 import asyncio
 from interfaces.mcp_server_interface import MCPServer
+from data.transport_data import flight_data
+from data.transport_data import train_data
+from data.transport_data import public_transport_data
 
 
 class TransportMCPServer(MCPServer):
@@ -14,74 +17,9 @@ class TransportMCPServer(MCPServer):
         self.API_BASE = "https://transport-api.example.com/v1"
         self.API_KEY = "YOUR_TRANSPORT_API_KEY"
         self.USER_AGENT = "transport-app/1.0"
-        self.MOCK_FLIGHTS = [
-            {
-                "id": "flt_101",
-                "airline": "Air GenZ",
-                "from": "New York",
-                "to": "Paris",
-                "departure": "2025-12-01T10:00",
-                "arrival": "2025-12-01T22:00",
-                "price": 650.00,
-                "currency": "USD",
-                "duration": "8h",
-            },
-            {
-                "id": "flt_102",
-                "airline": "Sky High",
-                "from": "Paris",
-                "to": "London",
-                "departure": "2025-12-02T08:00",
-                "arrival": "2025-12-02T09:30",
-                "price": 120.00,
-                "currency": "EUR",
-                "duration": "1h 30m",
-            },
-        ]
-        self.MOCK_TRAINS = [
-            {
-                "id": "trn_201",
-                "train": "Eurostar",
-                "from": "London",
-                "to": "Paris",
-                "departure": "2025-12-03T07:00",
-                "arrival": "2025-12-03T09:20",
-                "price": 90.00,
-                "currency": "EUR",
-                "duration": "2h 20m",
-            },
-            {
-                "id": "trn_202",
-                "train": "Shinkansen",
-                "from": "Tokyo",
-                "to": "Osaka",
-                "departure": "2025-12-04T13:00",
-                "arrival": "2025-12-04T15:30",
-                "price": 110.00,
-                "currency": "JPY",
-                "duration": "2h 30m",
-            },
-        ]
-        self.MOCK_PUBLIC_TRANSPORT = [
-            {
-                "id": "bus_301",
-                "type": "Bus",
-                "route": "Downtown Express",
-                "location": "New York City Center",
-                "frequency": "Every 15 min",
-                "price": 2.75,
-                "currency": "USD",
-            },
-            {
-                "id": "metro_302",
-                "type": "Metro",
-                "route": "Line 1",
-                "location": "Paris Central",
-                "frequency": "Every 5 min",
-                "price": 1.90,
-                "currency": "EUR",
-            },
-        ]
+        self.MOCK_FLIGHTS = flight_data
+        self.MOCK_TRAINS = train_data
+        self.MOCK_PUBLIC_TRANSPORT = public_transport_data
 
     async def register_tools(self) -> None:
         @self.mcp.tool()

@@ -4,7 +4,8 @@ import httpx
 from mcp.server.fastmcp import FastMCP
 import logging
 import random
-
+from data.hotel_data import hotel_data
+from data.hotel_data import hotel_destinations
 from interfaces.mcp_server_interface import MCPServer
 
 
@@ -14,148 +15,8 @@ class HotelMCPServer(MCPServer):
         self.BOOKING_API_BASE = "https://booking-com.p.rapidapi.com/v1"
         self.RAPIDAPI_KEY = "8f79364a7dmshf35dce4492b3da2p17f81fjsn70acc5d1eff8"
         self.USER_AGENT = "hotel-app/1.0"
-        self.MOCK_LOCATIONS = {
-            "new york": {
-                "dest_id": "20088325",
-                "dest_type": "city",
-                "name": "New York City",
-            },
-            "paris": {"dest_id": "20015732", "dest_type": "city", "name": "Paris"},
-            "london": {"dest_id": "20023181", "dest_type": "city", "name": "London"},
-            "tokyo": {"dest_id": "20023181", "dest_type": "city", "name": "Tokyo"},
-            "dubai": {"dest_id": "20021500", "dest_type": "city", "name": "Dubai"},
-            "mumbai": {"dest_id": "20019765", "dest_type": "city", "name": "Mumbai"},
-            "delhi": {"dest_id": "20019769", "dest_type": "city", "name": "Delhi"},
-            "lucknow": {"dest_id": "20019770", "dest_type": "city", "name": "Lucknow"},
-        }
-        self.MOCK_HOTELS = [
-            {
-                "hotel_id": "12345",
-                "hotel_name": "Grand Palace Hotel",
-                "min_total_price": 150.00,
-                "currency_code": "USD",
-                "review_score": 8.7,
-                "address": "123 Main Street, City Center",
-                "distance_to_cc": "0.5 km",
-                "description": "Luxurious hotel in the heart of the city with premium amenities.",
-                "facilities": [
-                    {"name": "WiFi"},
-                    {"name": "Pool"},
-                    {"name": "Gym"},
-                    {"name": "Restaurant"},
-                ],
-            },
-            {
-                "hotel_id": "12346",
-                "hotel_name": "Budget Inn Express",
-                "min_total_price": 45.00,
-                "currency_code": "USD",
-                "review_score": 7.2,
-                "address": "456 Budget Road, Suburbs",
-                "distance_to_cc": "3.2 km",
-                "description": "Comfortable and affordable accommodation for budget travelers.",
-                "facilities": [{"name": "WiFi"}, {"name": "Parking"}],
-            },
-            {
-                "hotel_id": "12347",
-                "hotel_name": "Luxury Resort & Spa",
-                "min_total_price": 350.00,
-                "currency_code": "USD",
-                "review_score": 9.4,
-                "address": "789 Ocean View Avenue, Beachfront",
-                "distance_to_cc": "5.1 km",
-                "description": "Five-star resort with spa services and ocean views.",
-                "facilities": [
-                    {"name": "WiFi"},
-                    {"name": "Pool"},
-                    {"name": "Spa"},
-                    {"name": "Beach Access"},
-                    {"name": "Restaurant"},
-                    {"name": "Bar"},
-                ],
-            },
-            {
-                "hotel_id": "12348",
-                "hotel_name": "Business Hotel Central",
-                "min_total_price": 120.00,
-                "currency_code": "USD",
-                "review_score": 8.1,
-                "address": "321 Business District, Financial Center",
-                "distance_to_cc": "1.0 km",
-                "description": "Modern business hotel with conference facilities.",
-                "facilities": [
-                    {"name": "WiFi"},
-                    {"name": "Business Center"},
-                    {"name": "Meeting Rooms"},
-                    {"name": "Restaurant"},
-                ],
-            },
-            {
-                "hotel_id": "12349",
-                "hotel_name": "Boutique Art Hotel",
-                "min_total_price": 200.00,
-                "currency_code": "USD",
-                "review_score": 8.9,
-                "address": "654 Art District, Cultural Quarter",
-                "distance_to_cc": "2.3 km",
-                "description": "Stylish boutique hotel featuring local art and unique design.",
-                "facilities": [
-                    {"name": "WiFi"},
-                    {"name": "Art Gallery"},
-                    {"name": "Cafe"},
-                    {"name": "Library"},
-                ],
-            },
-            {
-                "hotel_id": "12350",
-                "hotel_name": "Family Resort",
-                "min_total_price": 180.00,
-                "currency_code": "USD",
-                "review_score": 8.5,
-                "address": "987 Family Lane, Entertainment District",
-                "distance_to_cc": "4.0 km",
-                "description": "Family-friendly resort with kids' activities and entertainment.",
-                "facilities": [
-                    {"name": "WiFi"},
-                    {"name": "Kids Club"},
-                    {"name": "Pool"},
-                    {"name": "Playground"},
-                    {"name": "Restaurant"},
-                ],
-            },
-            {
-                "hotel_id": "12351",
-                "hotel_name": "Eco Lodge",
-                "min_total_price": 90.00,
-                "currency_code": "USD",
-                "review_score": 7.8,
-                "address": "111 Green Valley, Nature Reserve",
-                "distance_to_cc": "8.5 km",
-                "description": "Sustainable eco-lodge surrounded by nature.",
-                "facilities": [
-                    {"name": "WiFi"},
-                    {"name": "Hiking Trails"},
-                    {"name": "Organic Restaurant"},
-                    {"name": "Garden"},
-                ],
-            },
-            {
-                "hotel_id": "12352",
-                "hotel_name": "Historic Manor",
-                "min_total_price": 250.00,
-                "currency_code": "USD",
-                "review_score": 9.1,
-                "address": "222 Heritage Street, Old Town",
-                "distance_to_cc": "1.5 km",
-                "description": "Beautifully restored historic manor with period furnishings.",
-                "facilities": [
-                    {"name": "WiFi"},
-                    {"name": "Historic Tours"},
-                    {"name": "Fine Dining"},
-                    {"name": "Library"},
-                ],
-            },
-        ]
+        self.MOCK_LOCATIONS = hotel_destinations
+        self.MOCK_HOTELS = hotel_data
         self.USE_MOCK_DATA = True
 
     async def register_tools(self) -> None:
