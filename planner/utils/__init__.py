@@ -1,4 +1,3 @@
-from .config import Config
 from .error_handler import (
     Error,
     AgentError,
@@ -13,7 +12,6 @@ from .validator import validate_trip_request
 from .pretty_print import pretty_print_messages
 
 __all__ = [
-    "Config",
     "Error",
     "AgentError",
     "ToolError",

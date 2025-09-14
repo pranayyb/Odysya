@@ -1,7 +1,7 @@
 [project]
 name = "odysya"
 version = "0.1.0"
-description = "Planner for Odysya"
+description = "Odysya"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
