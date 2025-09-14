@@ -4,6 +4,7 @@ from langchain_groq import ChatGroq
 from langchain.tools import StructuredTool
 from langgraph.prebuilt import create_react_agent
 from tools.restaurant_tools import RestaurantTools
+from config import llm_model
 
 tools_client = RestaurantTools()
 
@@ -18,10 +19,7 @@ search_restaurants_tool = StructuredTool.from_function(
     description="Search for restaurants. Accepts a single prompt string; client handles extraction.",
 )
 
-llm = ChatGroq(
-    model="llama-3.3-70b-versatile",
-    api_key=os.getenv("GROQ_API_KEY"),
-)
+llm = llm_model
 
 restaurant_agent = create_react_agent(
     model=llm,

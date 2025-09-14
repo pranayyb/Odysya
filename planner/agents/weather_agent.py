@@ -4,6 +4,7 @@ from langchain_groq import ChatGroq
 from langgraph.prebuilt import create_react_agent
 from tools.weather_tools import WeatherTools
 from langchain.tools import StructuredTool
+from config import llm_model
 
 tools_client = WeatherTools()
 
@@ -18,10 +19,7 @@ get_weather_tool = StructuredTool.from_function(
     description="Get the current weather for a given location. Accepts a single prompt string; client handles extraction.",
 )
 
-llm = ChatGroq(
-    model="llama-3.3-70b-versatile",
-    api_key=os.getenv("GROQ_API_KEY"),
-)
+llm = llm_model
 
 weather_agent = create_react_agent(
     model=llm,

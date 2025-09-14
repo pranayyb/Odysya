@@ -4,6 +4,7 @@ from langchain.tools import StructuredTool
 from langchain_groq import ChatGroq
 from langgraph.prebuilt import create_react_agent
 from tools.transport_tools import TransportTools
+from config import llm_model
 
 tools_client = TransportTools()
 
@@ -18,10 +19,7 @@ search_transports_tool = StructuredTool.from_function(
     description="Search for transport options. Accepts a single prompt string; client handles extraction.",
 )
 
-llm = ChatGroq(
-    model="llama-3.3-70b-versatile",
-    api_key=os.getenv("GROQ_API_KEY"),
-)
+llm = llm_model
 
 transport_agent = create_react_agent(
     model=llm,
@@ -50,4 +48,3 @@ transport_agent = create_react_agent(
         4. Output must strictly be the tool’s response.
     """,
 )
-

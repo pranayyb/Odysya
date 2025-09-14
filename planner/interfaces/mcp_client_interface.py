@@ -8,6 +8,7 @@ from contextlib import AsyncExitStack
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from groq import Groq
+from config import model_name
 
 from dotenv import load_dotenv
 
@@ -18,6 +19,7 @@ class MCPClient:
     """
     unified interface for all mcp clients.
     """
+
     def __init__(self, api_key_env: str = "GROQ_API_KEY"):
         self.session: Optional[ClientSession] = None
         self.exit_stack = AsyncExitStack()
@@ -64,7 +66,7 @@ class MCPClient:
 
         response = self.groq.chat.completions.create(
             messages=messages,
-            model="llama-3.3-70b-versatile",
+            model=model_name,
             tools=available_tools,
             tool_choice="auto",
         )
@@ -109,7 +111,7 @@ class MCPClient:
                         f"Only simplify and rephrase.",
                     }
                 ],
-                model="llama-3.3-70b-versatile",
+                model=model_name,
             )
             if followup.choices[0].message.content:
                 output.append(followup.choices[0].message.content)

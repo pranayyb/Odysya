@@ -4,6 +4,7 @@ from langchain_groq import ChatGroq
 from langgraph.prebuilt import create_react_agent
 from tools.hotel_tools import HotelTools
 from langchain.tools import StructuredTool
+from config import llm_model
 
 tools_client = HotelTools()
 
@@ -18,10 +19,7 @@ search_hotels_tool = StructuredTool.from_function(
     description="Search for hotels. Accepts a single prompt string; client handles extraction.",
 )
 
-llm = ChatGroq(
-    model="llama-3.3-70b-versatile",
-    api_key=os.getenv("GROQ_API_KEY"),
-)
+llm = llm_model
 
 hotel_agent = create_react_agent(
     model=llm,
