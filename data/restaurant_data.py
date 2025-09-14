@@ -1,4 +1,4 @@
-restaurant_data = [
+RESTAURANT_DATA = [
     # --------- Mumbai ---------
     {
         "id": "res_201",

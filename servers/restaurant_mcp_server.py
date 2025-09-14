@@ -5,17 +5,18 @@ import logging
 import random
 import asyncio
 from interfaces.mcp_server_interface import MCPServer
-from data import restaurant_data
+from data.restaurant_data import RESTAURANT_DATA
+from config import RESTAURANT_MOCK_BOOL
 
 
 class RestaurantMCPServer(MCPServer):
     def __init__(self):
         self.mcp = FastMCP("restaurant")
-        self.USE_MOCK_DATA = True
+        self.USE_MOCK_DATA = RESTAURANT_MOCK_BOOL
         self.YELP_API_BASE = "https://api.yelp.com/v3"
         self.YELP_API_KEY = "YELP_API_KEY"
         self.USER_AGENT = "restaurant-app/1.0"
-        self.MOCK_RESTAURANTS = restaurant_data
+        self.MOCK_RESTAURANTS = RESTAURANT_DATA
 
     async def register_tools(self) -> None:
         @self.mcp.tool()

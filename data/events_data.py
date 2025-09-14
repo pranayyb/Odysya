@@ -1,4 +1,4 @@
-events_data = [
+EVENTS_DATA = [
     {
         "id": "evt_201",
         "name": "Arijit Singh Live",

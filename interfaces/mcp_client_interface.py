@@ -8,7 +8,7 @@ from contextlib import AsyncExitStack
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from groq import Groq
-from config import model_name
+from config import MODEL_NAME
 
 from dotenv import load_dotenv
 
@@ -66,7 +66,7 @@ class MCPClient:
 
         response = self.groq.chat.completions.create(
             messages=messages,
-            model=model_name,
+            model=MODEL_NAME,
             tools=available_tools,
             tool_choice="auto",
         )
@@ -111,7 +111,7 @@ class MCPClient:
                         f"Only simplify and rephrase.",
                     }
                 ],
-                model=model_name,
+                model=MODEL_NAME,
             )
             if followup.choices[0].message.content:
                 output.append(followup.choices[0].message.content)

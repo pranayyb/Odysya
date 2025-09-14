@@ -1,4 +1,4 @@
-weather_data = {
+WEATHER_DATA = {
     "delhi": {
         "city": "Delhi",
         "temp": 32,

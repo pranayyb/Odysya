@@ -4,17 +4,18 @@ from mcp.server.fastmcp import FastMCP
 import logging
 import asyncio
 from interfaces.mcp_server_interface import MCPServer
-from data.weather_data import weather_data
+from data.weather_data import WEATHER_DATA
+from config import WEATHER_MOCK_BOOL
 
 
 class WeatherMCPServer(MCPServer):
     def __init__(self):
         self.mcp = FastMCP("weather")
-        self.USE_MOCK_DATA = True
+        self.USE_MOCK_DATA = WEATHER_MOCK_BOOL
         self.API_BASE = "https://api.openweathermap.org/data/2.5"
         self.API_KEY = "YOUR_OPENWEATHER_API_KEY"
         self.USER_AGENT = "weather-app/1.0"
-        self.MOCK_WEATHER = weather_data
+        self.MOCK_WEATHER = WEATHER_DATA
 
     async def register_tools(self) -> None:
         @self.mcp.tool()

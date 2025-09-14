@@ -4,9 +4,10 @@ import httpx
 from mcp.server.fastmcp import FastMCP
 import logging
 import random
-from data.hotel_data import hotel_data
-from data.hotel_data import hotel_destinations
+from data.hotel_data import HOTEL_DATA
+from data.hotel_data import HOTEL_DESTINATIONS
 from interfaces.mcp_server_interface import MCPServer
+from config import HOTEL_MOCK_BOOL
 
 
 class HotelMCPServer(MCPServer):
@@ -15,9 +16,9 @@ class HotelMCPServer(MCPServer):
         self.BOOKING_API_BASE = "https://booking-com.p.rapidapi.com/v1"
         self.RAPIDAPI_KEY = "8f79364a7dmshf35dce4492b3da2p17f81fjsn70acc5d1eff8"
         self.USER_AGENT = "hotel-app/1.0"
-        self.MOCK_LOCATIONS = hotel_destinations
-        self.MOCK_HOTELS = hotel_data
-        self.USE_MOCK_DATA = True
+        self.MOCK_LOCATIONS = HOTEL_DESTINATIONS
+        self.MOCK_HOTELS = HOTEL_DATA
+        self.USE_MOCK_DATA = HOTEL_MOCK_BOOL
 
     async def register_tools(self) -> None:
         @self.mcp.tool()

@@ -1,4 +1,4 @@
-hotel_data = [
+HOTEL_DATA = [
     # --------- Mumbai ---------
     {
         "hotel_id": "INH001",
@@ -286,7 +286,7 @@ hotel_data = [
     },
 ]
 
-hotel_destinations = {
+HOTEL_DESTINATIONS = {
     "mumbai": {"dest_id": "IN001", "dest_type": "city", "name": "Mumbai"},
     "delhi": {"dest_id": "IN002", "dest_type": "city", "name": "Delhi"},
     "jaipur": {"dest_id": "IN003", "dest_type": "city", "name": "Jaipur"},

@@ -5,21 +5,22 @@ import logging
 import datetime
 import asyncio
 from interfaces.mcp_server_interface import MCPServer
-from data.transport_data import flight_data
-from data.transport_data import train_data
-from data.transport_data import public_transport_data
+from data.transport_data import FLIGHT_DATA
+from data.transport_data import TRAIN_DATA
+from data.transport_data import PUBLIC_TRANSPORT_DATA
+from config import TRANSPORT_MOCK_BOOL
 
 
 class TransportMCPServer(MCPServer):
     def __init__(self):
         self.mcp = FastMCP("transport")
-        self.USE_MOCK_DATA = True
+        self.USE_MOCK_DATA = TRANSPORT_MOCK_BOOL
         self.API_BASE = "https://transport-api.example.com/v1"
         self.API_KEY = "YOUR_TRANSPORT_API_KEY"
         self.USER_AGENT = "transport-app/1.0"
-        self.MOCK_FLIGHTS = flight_data
-        self.MOCK_TRAINS = train_data
-        self.MOCK_PUBLIC_TRANSPORT = public_transport_data
+        self.MOCK_FLIGHTS = FLIGHT_DATA
+        self.MOCK_TRAINS = TRAIN_DATA
+        self.MOCK_PUBLIC_TRANSPORT = PUBLIC_TRANSPORT_DATA
 
     async def register_tools(self) -> None:
         @self.mcp.tool()

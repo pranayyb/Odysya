@@ -4,8 +4,9 @@ import httpx
 from mcp.server.fastmcp import FastMCP
 import logging
 import datetime
-from data import events_data
+from data.events_data import EVENTS_DATA
 from interfaces.mcp_server_interface import MCPServer
+from config import EVENT_MOCK_BOOL
 
 
 class EventMCPServer(MCPServer):
@@ -14,8 +15,8 @@ class EventMCPServer(MCPServer):
         self.EVENTS_API_BASE = "https://events-api.example.com/v1"
         self.API_KEY = "YOUR_EVENTS_API_KEY"
         self.USER_AGENT = "events-app/1.0"
-        self.MOCK_EVENTS = events_data
-        self.USE_MOCK_DATA = True
+        self.MOCK_EVENTS = EVENTS_DATA
+        self.USE_MOCK_DATA = EVENT_MOCK_BOOL
 
     async def register_tools(self) -> None:
         @self.mcp.tool()

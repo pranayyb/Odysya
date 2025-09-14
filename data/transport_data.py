@@ -1,5 +1,5 @@
 # ----------- Flights -----------
-flight_data = [
+FLIGHT_DATA = [
     # Delhi - Mumbai
     {
         "id": "flt_301",
@@ -72,7 +72,7 @@ flight_data = [
 ]
 
 # ----------- Trains -----------
-train_data = [
+TRAIN_DATA = [
     # Delhi - Mumbai
     {
         "id": "trn_401",
@@ -206,7 +206,7 @@ bus_data = [
 ]
 
 # ----------- Local Metro / Public -----------
-public_transport_data = [
+PUBLIC_TRANSPORT_DATA = [
     {
         "id": "metro_601",
         "type": "Metro",
