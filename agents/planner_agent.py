@@ -197,10 +197,10 @@ travel_planner = graph.compile()
 
 if __name__ == "__main__":
     trip_request = TripRequest(
-        destination="Goa",
+        destination="Mumbai",
         start_date="2025-06-01",
         end_date="2025-06-05",
-        preferences=["beach", "food"],
+        preferences=["food"],
         budget=2000.0,
     )
     initial_state = {"trip": trip_request, "retries": [], "done": False}
