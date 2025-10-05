@@ -6,6 +6,7 @@ from .transport import Transport
 from .weather import Weather
 from .event import Event
 from .agent_response import AgentResponse
+from .planner_state import PlannerState
 
 __all__ = [
     "TripRequest",
@@ -16,4 +17,5 @@ __all__ = [
     "Weather",
     "Event",
     "AgentResponse",
+    "PlannerState",
 ]
