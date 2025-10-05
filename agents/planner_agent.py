@@ -20,6 +20,7 @@ from models import (
     Transport,
     Restaurant,
 )
+from utils.validator import validate_trip_request
 
 
 def root_node(state: PlannerState) -> dict[str, Any]:
@@ -196,13 +197,15 @@ travel_planner = graph.compile()
 
 
 if __name__ == "__main__":
-    trip_request = TripRequest(
-        destination="Mumbai",
-        start_date="2025-06-01",
-        end_date="2025-06-05",
-        preferences=["food"],
-        budget=2000.0,
-    )
+    trip_request = {
+        "destination": "Mumbai",
+        "start_date": "2025-06-01",
+        "end_date": "2025-06-05",
+        "preferences": ["food"],
+        "budget": 2000.0,
+    }
+
+    trip_request = validate_trip_request(trip_request)
     initial_state = {"trip": trip_request, "retries": [], "done": False}
     travel_planner.invoke(initial_state, {"recursion_limit": 50})
 
