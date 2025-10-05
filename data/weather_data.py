@@ -6,6 +6,7 @@ WEATHER_DATA = {
         "condition": "Sunny",
         "humidity": 40,
         "wind": 10,
+        "date": "2025-03-14",
     },
     "mumbai": {
         "city": "Mumbai",
@@ -14,6 +15,7 @@ WEATHER_DATA = {
         "condition": "Humid",
         "humidity": 75,
         "wind": 12,
+        "date": "2025-07-22",
     },
     "bengaluru": {
         "city": "Bengaluru",
@@ -22,6 +24,7 @@ WEATHER_DATA = {
         "condition": "Cloudy",
         "humidity": 65,
         "wind": 8,
+        "date": "2025-01-30",
     },
     "hyderabad": {
         "city": "Hyderabad",
@@ -30,6 +33,7 @@ WEATHER_DATA = {
         "condition": "Partly Cloudy",
         "humidity": 55,
         "wind": 7,
+        "date": "2025-10-05",
     },
     "goa": {
         "city": "Goa",
@@ -38,6 +42,7 @@ WEATHER_DATA = {
         "condition": "Rainy",
         "humidity": 80,
         "wind": 15,
+        "date": "2025-06-11",
     },
     "agra": {
         "city": "Agra",
@@ -46,6 +51,7 @@ WEATHER_DATA = {
         "condition": "Hot",
         "humidity": 50,
         "wind": 9,
+        "date": "2025-04-25",
     },
     "kolkata": {
         "city": "Kolkata",
@@ -54,6 +60,7 @@ WEATHER_DATA = {
         "condition": "Thunderstorms",
         "humidity": 85,
         "wind": 14,
+        "date": "2025-08-17",
     },
     "chennai": {
         "city": "Chennai",
@@ -62,6 +69,7 @@ WEATHER_DATA = {
         "condition": "Humid",
         "humidity": 78,
         "wind": 11,
+        "date": "2025-05-09",
     },
     "jaipur": {
         "city": "Jaipur",
@@ -70,6 +78,7 @@ WEATHER_DATA = {
         "condition": "Dry Heat",
         "humidity": 30,
         "wind": 10,
+        "date": "2025-02-18",
     },
     "varanasi": {
         "city": "Varanasi",
@@ -78,5 +87,6 @@ WEATHER_DATA = {
         "condition": "Clear",
         "humidity": 60,
         "wind": 6,
+        "date": "2025-09-03",
     },
 }
