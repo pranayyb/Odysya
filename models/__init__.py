@@ -1,7 +1,7 @@
 from .trip_request import TripRequest
 from .itinerary import Itinerary
-from .hotel import Hotel
-from .restaurant import Restaurant
+from .hotel import Hotels
+from .restaurant import Restaurants
 from .transport import Transport
 from .weather import Weather
 from .event import Events
@@ -11,11 +11,11 @@ from .planner_state import PlannerState
 __all__ = [
     "TripRequest",
     "Itinerary",
-    "Hotel",
-    "Restaurant",
+    "Hotels",
+    "Restaurants",
     "Transport",
     "Weather",
-    "Event",
+    "Events",
     "AgentResponse",
     "PlannerState",
 ]
