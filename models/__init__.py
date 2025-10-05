@@ -4,7 +4,7 @@ from .hotel import Hotel
 from .restaurant import Restaurant
 from .transport import Transport
 from .weather import Weather
-from .event import Event
+from .event import Events
 from .agent_response import AgentResponse
 from .planner_state import PlannerState
 

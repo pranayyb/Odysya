@@ -1,50 +1,38 @@
 import asyncio
-import os
-from langchain_groq import ChatGroq
-from langgraph.prebuilt import create_react_agent
 from langchain.tools import StructuredTool
+from models.event import Events
 from tools.event_tools import EventTools
 from config import llm_model
+
 
 tools_client = EventTools()
 
 
 def search_events(prompt: str) -> str:
+    """Wrapper to run event search asynchronously."""
     return asyncio.run(tools_client.run(prompt))
 
 
 search_events_tool = StructuredTool.from_function(
     func=search_events,
     name="search_events",
-    description="Search for events. Accepts a single prompt string; client handles extraction.",
+    description="Search for events, concerts, shows, festivals, or entertainment based on a prompt string.",
 )
 
-llm = llm_model
 
-event_agent = create_react_agent(
-    model=llm,
-    tools=[search_events_tool],
-    name="event_agent",
-    prompt=f"""
-        You are the **event agent** with STRICT limitations.
+llm_structured = llm_model.with_structured_output(Events)
+query = "events happening in mumbai"
 
-        ✅ AVAILABLE TOOL:
-        - search_events: {search_events_tool.description}
+tool_output = search_events(query)
 
-        ✅ WHAT YOU CAN DO:
-        - Handle queries ONLY about events, concerts, shows, festivals, or entertainment.
-        - Always call the `search_events` tool to answer event queries.
-
-        🚫 WHAT YOU CANNOT DO:
-        - Never invent or call any tool except `search_events`.
-        - Never call or mention `transfer_to_*` functions (they do not exist).
-        - Never provide info about hotels, restaurants, weather, or transport.
-        - Never answer directly without using your tool.
-
-        📋 INSTRUCTIONS:
-        1. If the query is NOT about events, respond: "This query is not about events."
-        2. If the query is about events, extract ONLY the event-related portion and call `search_events`.
-        3. Maximum of 3 tool calls; after that, return the last tool output.
-        4. Output must strictly be the tool’s response.
-    """,
+response = llm_structured.invoke(
+    [
+        {
+            "role": "system",
+            "content": "You are an assistant. Format the following tool output as EventSearchResponse JSON.",
+        },
+        {"role": "user", "content": tool_output},
+    ]
 )
+
+print(response.model_dump())
