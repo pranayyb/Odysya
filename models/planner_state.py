@@ -2,6 +2,7 @@ from typing import Dict, TypedDict
 
 from models.agent_response import AgentResponse
 from models.trip_request import TripRequest
+from models.itinerary import Itinerary
 
 
 class PlannerState(TypedDict):
@@ -13,4 +14,6 @@ class PlannerState(TypedDict):
     weather_result: AgentResponse | None
     event_result: AgentResponse | None
     retries: list[str]
+    notes: str
     done: bool
+    plan: Itinerary | None

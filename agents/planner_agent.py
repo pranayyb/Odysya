@@ -1,204 +1,236 @@
+import asyncio
 from typing import Any
 from langgraph.graph import StateGraph, START, END
-
-from agents import (
-    hotel_agent,
-    transport_agent,
-    restaurant_agent,
-    weather_agent,
-    event_agent,
-    replan_agent,
-)
-from replan_agent import ReplanDecision
+from agents import HotelAgent, TransportAgent, WeatherAgent, EventAgent, RestaurantAgent
+from agents.replanner_agent import ReplanAgent
 from models import (
     TripRequest,
     Itinerary,
     AgentResponse,
     PlannerState,
-    Weather,
-    Event,
-    Hotel,
-    Transport,
-    Restaurant,
 )
 from utils.validator import validate_trip_request
 
 
 def root_node(state: PlannerState) -> dict[str, Any]:
-    retries = []
-    for agent_key in [
-        "hotel_result",
-        "transport_result",
-        "restaurant_result",
-        "weather_result",
-        "event_result",
-    ]:
-        agent_data = state.get(agent_key)
-        if not agent_data or not agent_data.success:
-            retries.append(agent_key.split("_")[0])
+    return {"retries": state.get("retries", []), "done": False}
 
+
+def coordinator_node(state: PlannerState) -> dict[str, Any]:
+    if not any(
+        [
+            state.get("hotel_result"),
+            state.get("transport_result"),
+            state.get("restaurant_result"),
+            state.get("weather_result"),
+            state.get("event_result"),
+        ]
+    ):
+        return {"needs_agents": True, "done": False}
+
+    retries = state.get("retries", [])
     if retries:
-        return {"retries": retries, "done": False}
+        return {"needs_retry": True, "done": False}
     else:
         return {"done": True}
 
 
 def re_planner_node(state: PlannerState) -> dict[str, Any]:
-    """
-    Delegates re-planning logic to a ChatGroq LLM agent that produces
-    structured output matching the ReplanDecision schema.
-    """
-
-    query = (
-        "Analyze the current trip planning state and determine whether any "
-        "components (hotels, transport, restaurants, etc.) should be replanned. "
-        "Base your reasoning on budget, weather, missing data, or other constraints."
-    )
-
-    decision: ReplanDecision = replan_agent.invoke(
-        {
-            "messages": [
-                {
-                    "role": "system",
-                    "content": "You are a structured decision-making travel replanner agent.",
-                },
-                {"role": "user", "content": query},
-                {"role": "assistant", "content": str(state)},
-            ]
-        }
-    )
-
-    return decision.model_dump()
+    replan_agent = ReplanAgent()
+    decision = replan_agent.analyze_planner_state(state)
+    state["retries"] = decision.retries
+    state["notes"] = decision.notes
+    state["done"] = decision.done
+    return {
+        "retries": decision.retries,
+        "notes": decision.notes,
+        "done": decision.done,
+    }
 
 
 def hotel_node(state: PlannerState) -> dict[str, Any]:
-    query = (
-        f"Find hotels in {state['trip'].destination} from {state['trip'].start_date} "
-        f"to {state['trip'].end_date} within budget {state['trip'].budget}"
-    )
-    response = hotel_agent.invoke(
-        {
-            "messages": [
-                {
-                    "role": "user",
-                    "content": query,
-                }
-            ]
-        }
-    )
-    return {
-        "hotel_result": AgentResponse(
-            agent_name="hotel", success=True, data=response["messages"][0].content
+    retries = state.get("retries", [])
+    if state.get("hotel_result") and "hotel" not in retries:
+        return {}
+
+    try:
+        hotel_agent = HotelAgent()
+        query = (
+            f"Find hotels in {state['trip'].destination} from {state['trip'].start_date} "
+            f"to {state['trip'].end_date} within budget {state['trip'].budget}"
         )
-    }
+        response = asyncio.run(hotel_agent.search_and_format(query))
+        return {
+            "hotel_result": AgentResponse(
+                agent_name="hotel",
+                success=True,
+                data=(
+                    response.model_dump()
+                    if hasattr(response, "model_dump")
+                    else response
+                ),
+            )
+        }
+    except Exception as e:
+        return {
+            "hotel_result": AgentResponse(
+                agent_name="hotel", success=False, data=None, error=str(e)
+            )
+        }
 
 
 def transport_node(state: PlannerState) -> dict[str, Any]:
-    query = (
-        f"Find transport options to reach {state['trip'].destination} "
-        f"from the starting point on {state['trip'].start_date}"
-    )
-    response = transport_agent.invoke(
-        {
-            "messages": [
-                {
-                    "role": "user",
-                    "content": query,
-                }
-            ]
-        }
-    )
-    transport_data = response["messages"][0].content
-    return {
-        "transport_result": AgentResponse(
-            agent_name="transport", success=True, data=transport_data
+    retries = state.get("retries", [])
+    if state.get("transport_result") and "transport" not in retries:
+        return {}
+
+    try:
+        transport_agent = TransportAgent()
+        query = (
+            f"Find transport options to reach {state['trip'].destination} "
+            f"from the starting point on {state['trip'].start_date}"
         )
-    }
+        response = asyncio.run(transport_agent.search_and_format(query))
+        return {
+            "transport_result": AgentResponse(
+                agent_name="transport",
+                success=True,
+                data=(
+                    response.model_dump()
+                    if hasattr(response, "model_dump")
+                    else response
+                ),
+            )
+        }
+    except Exception as e:
+        return {
+            "transport_result": AgentResponse(
+                agent_name="transport", success=False, data=None, error=str(e)
+            )
+        }
 
 
 def restaurant_node(state: PlannerState) -> dict[str, Any]:
-    query = (
-        f"Find restaurants in {state['trip'].destination} suitable for {state['trip'].preferences} "
-        f"during {state['trip'].start_date} to {state['trip'].end_date}"
-    )
-    response = restaurant_agent.invoke(
-        {
-            "messages": [
-                {
-                    "role": "user",
-                    "content": query,
-                }
-            ]
-        }
-    )
-    restaurant_data = response["messages"][0].content
-    return {
-        "restaurant_result": AgentResponse(
-            agent_name="restaurant", success=True, data=restaurant_data
+    retries = state.get("retries", [])
+    if state.get("restaurant_result") and "restaurant" not in retries:
+        return {}
+
+    try:
+        restaurant_agent = RestaurantAgent()
+        query = (
+            f"Find restaurants in {state['trip'].destination} suitable for {state['trip'].preferences} "
+            f"during {state['trip'].start_date} to {state['trip'].end_date}"
         )
-    }
+        response = asyncio.run(restaurant_agent.search_and_format(query))
+        return {
+            "restaurant_result": AgentResponse(
+                agent_name="restaurant",
+                success=True,
+                data=(
+                    response.model_dump()
+                    if hasattr(response, "model_dump")
+                    else response
+                ),
+            )
+        }
+    except Exception as e:
+        return {
+            "restaurant_result": AgentResponse(
+                agent_name="restaurant", success=False, data=None, error=str(e)
+            )
+        }
 
 
 def weather_node(state: PlannerState) -> dict[str, Any]:
-    query = (
-        f"Provide weather forecast for {state['trip'].destination} "
-        f"from {state['trip'].start_date} to {state['trip'].end_date}"
-    )
-    response = weather_agent.invoke(
-        {
-            "messages": [
-                {
-                    "role": "user",
-                    "content": query,
-                }
-            ]
-        }
-    )
-    weather_data = response["messages"][0].content
-    return {
-        "weather_result": AgentResponse(
-            agent_name="weather", success=True, data=weather_data
+    retries = state.get("retries", [])
+    if state.get("weather_result") and "weather" not in retries:
+        return {}
+
+    try:
+        weather_agent = WeatherAgent()
+        query = (
+            f"Provide weather forecast for {state['trip'].destination} "
+            f"from {state['trip'].start_date} to {state['trip'].end_date}"
         )
-    }
+        response = asyncio.run(weather_agent.search_and_format(query))
+        return {
+            "weather_result": AgentResponse(
+                agent_name="weather",
+                success=True,
+                data=(
+                    response.model_dump()
+                    if hasattr(response, "model_dump")
+                    else response
+                ),
+            )
+        }
+    except Exception as e:
+        return {
+            "weather_result": AgentResponse(
+                agent_name="weather", success=False, data=None, error=str(e)
+            )
+        }
 
 
 def event_node(state: PlannerState) -> dict[str, Any]:
-    query = (
-        f"Find events happening in {state['trip'].destination} "
-        f"during {state['trip'].start_date} to {state['trip'].end_date}"
-    )
-    response = event_agent.invoke(
-        {
-            "messages": [
-                {
-                    "role": "user",
-                    "content": query,
-                }
-            ]
-        }
-    )
-    event_data = response["messages"][0].content
-    return {
-        "event_result": AgentResponse(
-            agent_name="events", success=True, data=event_data
+    retries = state.get("retries", [])
+    if state.get("event_result") and "event" not in retries:
+        return {}
+
+    try:
+        event_agent = EventAgent()
+        query = (
+            f"Find events happening in {state['trip'].destination} "
+            f"during {state['trip'].start_date} to {state['trip'].end_date}"
         )
-    }
+        response = asyncio.run(event_agent.search_and_format(query))
+        return {
+            "event_result": AgentResponse(
+                agent_name="event",
+                success=True,
+                data=(
+                    response.model_dump()
+                    if hasattr(response, "model_dump")
+                    else response
+                ),
+            )
+        }
+    except Exception as e:
+        return {
+            "event_result": AgentResponse(
+                agent_name="event", success=False, data=None, error=str(e)
+            )
+        }
 
 
 def aggregator_node(state: PlannerState) -> dict[str, Any]:
     plan = Itinerary(
         trip=state["trip"],
         transport=(
-            state.get("transport_result").data if state.get("transport_result") else []
+            state.get("transport_result").data
+            if state.get("transport_result")
+            else ["No results available"]
         ),
-        hotels=state.get("hotel_result").data if state.get("hotel_result") else [],
+        hotels=(
+            state.get("hotel_result").data
+            if state.get("hotel_result")
+            else ["No results available"]
+        ),
         restaurants=(
             state.get("restaurant_result").data
             if state.get("restaurant_result")
-            else []
+            else ["No results available"]
         ),
-        weather=state.get("weather_result").data if state.get("weather_result") else [],
-        events=state.get("event_result").data if state.get("event_result") else [],
+        weather=(
+            state.get("weather_result").data
+            if state.get("weather_result")
+            else ["No results available"]
+        ),
+        events=(
+            state.get("event_result").data
+            if state.get("event_result")
+            else ["No results available"]
+        ),
     )
     print("\nFinal Trip Plan:\n", plan.model_dump_json(indent=2))
     return {"plan": plan}
@@ -207,20 +239,41 @@ def aggregator_node(state: PlannerState) -> dict[str, Any]:
 graph = StateGraph(PlannerState)
 
 graph.add_node("root", root_node)
+graph.add_node("coordinator", coordinator_node)
 graph.add_node("transport", transport_node)
 graph.add_node("hotels", hotel_node)
 graph.add_node("restaurants", restaurant_node)
 graph.add_node("weather", weather_node)
 graph.add_node("events", event_node)
 graph.add_node("aggregator", aggregator_node)
+graph.add_node("replanner", re_planner_node)
 
 graph.add_edge(START, "root")
+graph.add_edge("root", "coordinator")
 
-for agent in ["transport", "hotels", "restaurants", "weather", "events"]:
-    graph.add_edge("root", agent)
-    graph.add_edge(agent, "aggregator")
+graph.add_conditional_edges(
+    "coordinator",
+    lambda state: (
+        "run_agents"
+        if state.get("needs_agents")
+        else ("retry" if state.get("needs_retry") else "done")
+    ),
+    {
+        "run_agents": "transport",
+        "retry": "transport",
+        "done": "aggregator",
+    },
+)
 
-# graph.add_edge("root", "aggregator")
+graph.add_edge("transport", "hotels")
+graph.add_edge("hotels", "restaurants")
+graph.add_edge("restaurants", "weather")
+graph.add_edge("weather", "events")
+graph.add_edge("events", "replanner")
+graph.add_edge("replanner", "coordinator")
+
+# Aggregator is the final step
+graph.add_edge("aggregator", END)
 
 travel_planner = graph.compile()
 
@@ -233,45 +286,18 @@ if __name__ == "__main__":
         "preferences": ["food"],
         "budget": 2000.0,
     }
-
-    trip_request = validate_trip_request(trip_request)
-    initial_state = {"trip": trip_request, "retries": [], "done": False}
-    travel_planner.invoke(initial_state, {"recursion_limit": 50})
-
-
-# Root node to check which agents need retry
-# def root_node(state: PlannerState) -> dict[str, Any]:
-#     retries = []
-
-#     # If no results yet, trigger all agents
-#     if not any(
-#         key in state
-#         for key in [
-#             "hotel_result",
-#             "transport_result",
-#             "restaurant_result",
-#             "weather_result",
-#             "event_result",
-#         ]
-#     ):
-#         return {
-#             "retries": ["transport", "hotel", "restaurant", "weather", "event"],
-#             "done": False,
-#         }
-
-#     # for agent_key in [
-#     #     "hotel_result",
-#     #     "transport_result",
-#     #     "restaurant_result",
-#     #     "weather_result",
-#     #     "event_result",
-#     # ]:
-#     #     agent_data = state.get(agent_key)
-#     #     if not agent_data or not agent_data.success:
-#     #         retries.append(agent_key.split("_")[0])
-
-
-#     # if retries:
-#     #     return {"retries": list(set(retries)), "done": False}
-#     # else:
-#     #     return {"done": True}
+    trip_request: TripRequest = validate_trip_request(trip_request)
+    initial_state = {
+        "trip": trip_request,
+        "retries": [],
+        "done": False,
+        "notes": "",
+        "hotel_result": None,
+        "transport_result": None,
+        "restaurant_result": None,
+        "weather_result": None,
+        "event_result": None,
+        "plan": None,
+    }
+    result = travel_planner.invoke(initial_state, {"recursion_limit": 50})
+    print("\nFinal result:", result.get("plan"))
