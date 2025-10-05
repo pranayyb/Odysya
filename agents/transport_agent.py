@@ -3,6 +3,7 @@ import os
 from langchain.tools import StructuredTool
 from langchain_groq import ChatGroq
 from langgraph.prebuilt import create_react_agent
+from models.transport import Transport
 from tools.transport_tools import TransportTools
 from config import llm_model
 
@@ -19,32 +20,19 @@ search_transports_tool = StructuredTool.from_function(
     description="Search for transport options. Accepts a single prompt string; client handles extraction.",
 )
 
-llm = llm_model
+llm_structured = llm_model.with_structured_output(Transport)
+query = "transport options to delhi from mumbai"
 
-transport_agent = create_react_agent(
-    model=llm,
-    tools=[search_transports_tool],
-    name="transport_agent",
-    prompt=f"""
-        You are the **transport agent** with STRICT limitations.
+tool_output = search_transports(query)
 
-        ✅ AVAILABLE TOOL:
-        - search_transports: {search_transports_tool.description}
-
-        ✅ WHAT YOU CAN DO:
-        - Handle queries ONLY about transport, public transport, flights, trains, or buses.
-        - Always call the `search_transports` tool to answer transport queries.
-
-        🚫 WHAT YOU CANNOT DO:
-        - Never invent or call any tool except `search_transports`.
-        - Never call or mention `transfer_to_*` functions (they do not exist).
-        - Never provide info about hotels, restaurants, events, or weather.
-        - Never answer directly without using your tool.
-
-        📋 INSTRUCTIONS:
-        1. If the query is NOT about transport, respond: "This query is not about transport."
-        2. If the query is about transport, extract ONLY the transport-related portion and call `search_transports`.
-        3. Maximum of 3 tool calls; after that, return the last tool output.
-        4. Output must strictly be the tool’s response.
-    """,
+response = llm_structured.invoke(
+    [
+        {
+            "role": "system",
+            "content": "You are an assistant. Format the following tool output as Transport JSON.",
+        },
+        {"role": "user", "content": tool_output},
+    ]
 )
+
+print(response.model_dump())

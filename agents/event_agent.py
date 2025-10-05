@@ -29,7 +29,7 @@ response = llm_structured.invoke(
     [
         {
             "role": "system",
-            "content": "You are an assistant. Format the following tool output as EventSearchResponse JSON.",
+            "content": "You are an assistant. Format the following tool output as Events JSON.",
         },
         {"role": "user", "content": tool_output},
     ]

@@ -7,8 +7,9 @@ from agents import (
     restaurant_agent,
     weather_agent,
     event_agent,
+    replan_agent,
 )
-
+from replan_agent import ReplanDecision
 from models import (
     TripRequest,
     Itinerary,
@@ -40,6 +41,34 @@ def root_node(state: PlannerState) -> dict[str, Any]:
         return {"retries": retries, "done": False}
     else:
         return {"done": True}
+
+
+def re_planner_node(state: PlannerState) -> dict[str, Any]:
+    """
+    Delegates re-planning logic to a ChatGroq LLM agent that produces
+    structured output matching the ReplanDecision schema.
+    """
+
+    query = (
+        "Analyze the current trip planning state and determine whether any "
+        "components (hotels, transport, restaurants, etc.) should be replanned. "
+        "Base your reasoning on budget, weather, missing data, or other constraints."
+    )
+
+    decision: ReplanDecision = replan_agent.invoke(
+        {
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "You are a structured decision-making travel replanner agent.",
+                },
+                {"role": "user", "content": query},
+                {"role": "assistant", "content": str(state)},
+            ]
+        }
+    )
+
+    return decision.model_dump()
 
 
 def hotel_node(state: PlannerState) -> dict[str, Any]:

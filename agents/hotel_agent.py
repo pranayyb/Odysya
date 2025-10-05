@@ -1,7 +1,5 @@
 import asyncio
-import os
-from langchain_groq import ChatGroq
-from langgraph.prebuilt import create_react_agent
+from models.hotel import Hotels
 from tools.hotel_tools import HotelTools
 from langchain.tools import StructuredTool
 from config import llm_model
@@ -19,32 +17,20 @@ search_hotels_tool = StructuredTool.from_function(
     description="Search for hotels. Accepts a single prompt string; client handles extraction.",
 )
 
-llm = llm_model
 
-hotel_agent = create_react_agent(
-    model=llm,
-    tools=[search_hotels_tool],
-    name="hotel_agent",
-    prompt=f"""
-        You are the **hotel agent** with STRICT limitations.
+llm_structured = llm_model.with_structured_output(Hotels)
+query = "hotels in delhi under 20000"
 
-        ✅ AVAILABLE TOOL:
-        - search_hotels: {search_hotels_tool.description}
+tool_output = search_hotels(query)
 
-        ✅ WHAT YOU CAN DO:
-        - Handle queries ONLY about hotels, accommodations, lodging, or stays.
-        - Always call the `search_hotels` tool to answer hotel queries.
-
-        🚫 WHAT YOU CANNOT DO:
-        - Never invent or call any tool except `search_hotels`.
-        - Never call or mention `transfer_to_*` functions (they do not exist).
-        - Never provide info about restaurants, events, weather, or transport.
-        - Never answer directly without using your tool.
-
-        📋 INSTRUCTIONS:
-        1. If the query is NOT about hotels, respond: "This query is not about hotels."
-        2. If the query is about hotels, extract ONLY the hotel-related portion and call `search_hotels`.
-        3. Maximum of 3 tool calls; after that, return the last tool output.
-        4. Output must strictly be the tool’s response.
-    """,
+response = llm_structured.invoke(
+    [
+        {
+            "role": "system",
+            "content": "You are an assistant. Format the following tool output as Hotels JSON.",
+        },
+        {"role": "user", "content": tool_output},
+    ]
 )
+
+print(response.model_dump())
