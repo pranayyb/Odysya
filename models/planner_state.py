@@ -1,4 +1,4 @@
-from typing import Dict, TypedDict
+from typing import Dict, TypedDict, Any
 
 from models.agent_response import AgentResponse
 from models.trip_request import TripRequest
@@ -16,4 +16,5 @@ class PlannerState(TypedDict):
     retries: list[str]
     notes: str
     done: bool
-    plan: Itinerary | None
+    aggregated_plan: Itinerary | None
+    final_itinerary: Dict[str, Any] | None

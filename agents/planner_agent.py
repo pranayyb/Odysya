@@ -3,6 +3,7 @@ from typing import Any
 from langgraph.graph import StateGraph, START, END
 from agents import HotelAgent, TransportAgent, WeatherAgent, EventAgent, RestaurantAgent
 from agents.replanner_agent import ReplanAgent
+from agents.itinerary_agent import ItineraryAgent
 from models import (
     TripRequest,
     Itinerary,
@@ -210,8 +211,41 @@ def aggregator_node(state: PlannerState) -> dict[str, Any]:
             else ["No results available"]
         ),
     )
-    # print("\nFinal Trip Plan:\n", plan.model_dump_json(indent=2))
-    return {"plan": plan}
+    return {"aggregated_plan": plan}
+
+
+def itinerary_node(state: PlannerState) -> dict[str, Any]:
+    try:
+        itinerary_agent = ItineraryAgent()
+        aggregated_plan = state.get("aggregated_plan")
+
+        if not aggregated_plan:
+            return {"final_itinerary": "Error: No aggregated plan available"}
+
+        detailed_result = asyncio.run(
+            itinerary_agent.generate_detailed_itinerary(aggregated_plan)
+        )
+
+        print("\n" + "=" * 50)
+        print("🎯 DETAILED TRIP ITINERARY")
+        print("=" * 50)
+        print(detailed_result.get("detailed_itinerary", "No itinerary generated"))
+        print("\n" + "-" * 30)
+        print(f"📋 Summary: {detailed_result.get('summary', 'No summary')}")
+        print(f"💰 Estimated Cost: ${detailed_result.get('total_estimated_cost', 0)}")
+        print("🎯 Key Recommendations:")
+        for rec in detailed_result.get("key_recommendations", []):
+            print(f"  • {rec}")
+        print("=" * 50 + "\n")
+
+        return {
+            "final_itinerary": detailed_result,
+        }
+
+    except Exception as e:
+        return {
+            "final_itinerary": f"Error generating detailed itinerary: {str(e)}",
+        }
 
 
 graph = StateGraph(PlannerState)
@@ -224,6 +258,7 @@ graph.add_node("weather", weather_node)
 graph.add_node("events", event_node)
 graph.add_node("aggregator", aggregator_node)
 graph.add_node("replanner", re_planner_node)
+graph.add_node("itinerary", itinerary_node)
 
 graph.add_edge(START, "coordinator")
 
@@ -284,7 +319,8 @@ graph.add_conditional_edges(
     },
 )
 
-graph.add_edge("aggregator", END)
+graph.add_edge("aggregator", "itinerary")
+graph.add_edge("itinerary", END)
 
 travel_planner = graph.compile()
 
@@ -308,7 +344,14 @@ if __name__ == "__main__":
         "restaurant_result": None,
         "weather_result": None,
         "event_result": None,
-        "plan": None,
+        "aggregated_plan": None,
+        "final_itinerary": None,
     }
     result = travel_planner.invoke(initial_state, {"recursion_limit": 50})
-    print("\nFinal result:", result.get("plan"))
+    print("\n🎉 TRIP PLANNING COMPLETED!")
+    print(
+        "\nDetailed Itinerary:",
+        result.get("final_itinerary", {}).get(
+            "detailed_itinerary", "No detailed itinerary generated"
+        ),
+    )
