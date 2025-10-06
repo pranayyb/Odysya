@@ -12,35 +12,13 @@ from models import (
 from utils.validator import validate_trip_request
 
 
-def root_node(state: PlannerState) -> dict[str, Any]:
-    return {"retries": state.get("retries", []), "done": False}
-
-
 def coordinator_node(state: PlannerState) -> dict[str, Any]:
-    if not any(
-        [
-            state.get("hotel_result"),
-            state.get("transport_result"),
-            state.get("restaurant_result"),
-            state.get("weather_result"),
-            state.get("event_result"),
-        ]
-    ):
-        return {"needs_agents": True, "done": False}
-
-    retries = state.get("retries", [])
-    if retries:
-        return {"needs_retry": True, "done": False}
-    else:
-        return {"done": True}
+    return {}
 
 
 def re_planner_node(state: PlannerState) -> dict[str, Any]:
     replan_agent = ReplanAgent()
     decision = replan_agent.analyze_planner_state(state)
-    state["retries"] = decision.retries
-    state["notes"] = decision.notes
-    state["done"] = decision.done
     return {
         "retries": decision.retries,
         "notes": decision.notes,
@@ -232,13 +210,12 @@ def aggregator_node(state: PlannerState) -> dict[str, Any]:
             else ["No results available"]
         ),
     )
-    print("\nFinal Trip Plan:\n", plan.model_dump_json(indent=2))
+    # print("\nFinal Trip Plan:\n", plan.model_dump_json(indent=2))
     return {"plan": plan}
 
 
 graph = StateGraph(PlannerState)
 
-graph.add_node("root", root_node)
 graph.add_node("coordinator", coordinator_node)
 graph.add_node("transport", transport_node)
 graph.add_node("hotels", hotel_node)
@@ -248,31 +225,65 @@ graph.add_node("events", event_node)
 graph.add_node("aggregator", aggregator_node)
 graph.add_node("replanner", re_planner_node)
 
-graph.add_edge(START, "root")
-graph.add_edge("root", "coordinator")
+graph.add_edge(START, "coordinator")
+
+graph.add_edge("coordinator", "transport")
+graph.add_edge("coordinator", "hotels")
+graph.add_edge("coordinator", "restaurants")
+graph.add_edge("coordinator", "weather")
+graph.add_edge("coordinator", "events")
+
+graph.add_edge("transport", "coordinator")
+graph.add_edge("hotels", "coordinator")
+graph.add_edge("restaurants", "coordinator")
+graph.add_edge("weather", "coordinator")
+graph.add_edge("events", "coordinator")
 
 graph.add_conditional_edges(
     "coordinator",
     lambda state: (
-        "run_agents"
-        if state.get("needs_agents")
-        else ("retry" if state.get("needs_retry") else "done")
+        "replanner"
+        if all(
+            [
+                state.get("hotel_result"),
+                state.get("transport_result"),
+                state.get("restaurant_result"),
+                state.get("weather_result"),
+                state.get("event_result"),
+            ]
+        )
+        else "wait"
     ),
     {
-        "run_agents": "transport",
-        "retry": "transport",
-        "done": "aggregator",
+        "replanner": "replanner",
+        "wait": "coordinator",
     },
 )
 
-graph.add_edge("transport", "hotels")
-graph.add_edge("hotels", "restaurants")
-graph.add_edge("restaurants", "weather")
-graph.add_edge("weather", "events")
-graph.add_edge("events", "replanner")
-graph.add_edge("replanner", "coordinator")
+graph.add_conditional_edges(
+    "replanner",
+    lambda state: (
+        "aggregator"
+        if (
+            all(
+                [
+                    state.get("hotel_result"),
+                    state.get("transport_result"),
+                    state.get("restaurant_result"),
+                    state.get("weather_result"),
+                    state.get("event_result"),
+                ]
+            )
+            and not state.get("retries", [])
+        )
+        else "coordinator"
+    ),
+    {
+        "aggregator": "aggregator",
+        "coordinator": "coordinator",
+    },
+)
 
-# Aggregator is the final step
 graph.add_edge("aggregator", END)
 
 travel_planner = graph.compile()

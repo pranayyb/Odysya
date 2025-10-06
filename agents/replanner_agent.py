@@ -110,5 +110,5 @@ mock_state = PlannerState(
 )
 
 decision = replan_agent.analyze_planner_state(mock_state)
-print("Replan Decision JSON:")
-print(json.dumps(decision.model_dump(), indent=2))
+# print("Replan Decision JSON:")
+# print(json.dumps(decision.model_dump(), indent=2))
