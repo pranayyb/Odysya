@@ -286,14 +286,38 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Roadmap!!
 
+### Performance & Infrastructure
+- [ ] Switching to GO servers for faster concurrent fetching
 - [ ] Real-time booking capabilities
-- [ ] Mobile application
-- [ ] Advanced preference learning
-- [ ] Multi-destination planning
-- [ ] Integration with calendar systems
-- [ ] Collaborative trip planning
 - [ ] Cost optimization algorithms
-- [ ] Carbon footprint tracking
+
+### Platform & Accessibility
+- [ ] Mobile application
+- [ ] Text-to-Speech (TTS) integration for voice-guided itineraries
+- [ ] Voice commands for hands-free travel planning
+
+### Social & Collaborative Features
+- [ ] Collaborative trip planning with shared itineraries
+- [ ] Travel buddy matching system (connect travelers going to same destination/dates)
+- [ ] Group travel coordination and split expense tracking
+- [ ] Social recommendations from fellow travelers
+
+### Integration & Productivity
+- [ ] Gmail integration for automatic booking confirmations and updates
+- [ ] Google Calendar/Outlook calendar synchronization
+- [ ] Slack/Teams integration for team travel planning
+- [ ] WhatsApp/Telegram bot for quick trip updates
+
+### AI & Personalization
+- [ ] Advanced preference learning with ML models
+- [ ] Multi-destination planning with route optimization
+- [ ] Predictive rebooking based on travel pattern analysis
+- [ ] Smart travel alerts and recommendations
+
+### Sustainability & Analytics
+- [ ] Carbon footprint tracking and eco-friendly alternatives
+- [ ] Travel analytics dashboard with insights and trends
+- [ ] Sustainable travel recommendations and certifications
 
 ---
 
