@@ -25,7 +25,7 @@ def re_planner_node(state: PlannerState) -> dict[str, Any]:
     }
 
 
-def hotel_node(state: PlannerState) -> dict[str, Any]:
+async def hotel_node(state: PlannerState) -> dict[str, Any]:
     retries = state.get("retries", [])
     if state.get("hotel_result") and "hotel" not in retries:
         return {}
@@ -36,7 +36,7 @@ def hotel_node(state: PlannerState) -> dict[str, Any]:
             f"Find hotels in {state['trip'].destination} from {state['trip'].start_date} "
             f"to {state['trip'].end_date} within budget {state['trip'].budget}"
         )
-        response = asyncio.run(hotel_agent.search_and_format(query))
+        response = await hotel_agent.search_and_format(query)
         return {
             "hotel_result": AgentResponse(
                 agent_name="hotel",
@@ -56,7 +56,7 @@ def hotel_node(state: PlannerState) -> dict[str, Any]:
         }
 
 
-def transport_node(state: PlannerState) -> dict[str, Any]:
+async def transport_node(state: PlannerState) -> dict[str, Any]:
     retries = state.get("retries", [])
     if state.get("transport_result") and "transport" not in retries:
         return {}
@@ -67,7 +67,7 @@ def transport_node(state: PlannerState) -> dict[str, Any]:
             f"Find transport options to reach {state['trip'].destination} "
             f"from the starting point on {state['trip'].start_date}"
         )
-        response = asyncio.run(transport_agent.search_and_format(query))
+        response = await transport_agent.search_and_format(query)
         return {
             "transport_result": AgentResponse(
                 agent_name="transport",
@@ -87,7 +87,7 @@ def transport_node(state: PlannerState) -> dict[str, Any]:
         }
 
 
-def restaurant_node(state: PlannerState) -> dict[str, Any]:
+async def restaurant_node(state: PlannerState) -> dict[str, Any]:
     retries = state.get("retries", [])
     if state.get("restaurant_result") and "restaurant" not in retries:
         return {}
@@ -98,7 +98,7 @@ def restaurant_node(state: PlannerState) -> dict[str, Any]:
             f"Find restaurants in {state['trip'].destination} suitable for {state['trip'].preferences} "
             f"during {state['trip'].start_date} to {state['trip'].end_date}"
         )
-        response = asyncio.run(restaurant_agent.search_and_format(query))
+        response = await restaurant_agent.search_and_format(query)
         return {
             "restaurant_result": AgentResponse(
                 agent_name="restaurant",
@@ -118,7 +118,7 @@ def restaurant_node(state: PlannerState) -> dict[str, Any]:
         }
 
 
-def weather_node(state: PlannerState) -> dict[str, Any]:
+async def weather_node(state: PlannerState) -> dict[str, Any]:
     retries = state.get("retries", [])
     if state.get("weather_result") and "weather" not in retries:
         return {}
@@ -129,7 +129,7 @@ def weather_node(state: PlannerState) -> dict[str, Any]:
             f"Provide weather forecast for {state['trip'].destination} "
             f"from {state['trip'].start_date} to {state['trip'].end_date}"
         )
-        response = asyncio.run(weather_agent.search_and_format(query))
+        response = await weather_agent.search_and_format(query)
         return {
             "weather_result": AgentResponse(
                 agent_name="weather",
@@ -149,7 +149,7 @@ def weather_node(state: PlannerState) -> dict[str, Any]:
         }
 
 
-def event_node(state: PlannerState) -> dict[str, Any]:
+async def event_node(state: PlannerState) -> dict[str, Any]:
     retries = state.get("retries", [])
     if state.get("event_result") and "event" not in retries:
         return {}
@@ -160,7 +160,7 @@ def event_node(state: PlannerState) -> dict[str, Any]:
             f"Find events happening in {state['trip'].destination} "
             f"during {state['trip'].start_date} to {state['trip'].end_date}"
         )
-        response = asyncio.run(event_agent.search_and_format(query))
+        response = await event_agent.search_and_format(query)
         return {
             "event_result": AgentResponse(
                 agent_name="event",

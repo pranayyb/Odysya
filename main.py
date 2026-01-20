@@ -1,3 +1,4 @@
+import asyncio
 from models.trip_request import TripRequest
 from utils.validator import validate_trip_request
 from agents.planner_agent import travel_planner
@@ -24,7 +25,7 @@ if __name__ == "__main__":
         "aggregated_plan": None,
         "final_itinerary": None,
     }
-    result = travel_planner.invoke(initial_state, {"recursion_limit": 50})
+    result = asyncio.run(travel_planner.ainvoke(initial_state, {"recursion_limit": 50}))
     print("\nTRIP PLANNING COMPLETED!")
     print(
         "\nDetailed Itinerary:",
