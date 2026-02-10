@@ -305,26 +305,6 @@ async def itinerary_node(state: PlannerState) -> dict[str, Any]:
         }
 
 
-def _all_results_present(state: PlannerState) -> bool:
-    return all(
-        [
-            state.get("hotel_result"),
-            state.get("transport_result"),
-            state.get("restaurant_result"),
-            state.get("weather_result"),
-            state.get("event_result"),
-        ]
-    )
-
-
-def route_after_coordinator(state: PlannerState) -> str:
-    if _all_results_present(state):
-        logger.info("route_after_coordinator -> replanner (all results present)")
-        return "replanner"
-    logger.debug("route_after_coordinator -> wait (results still pending)")
-    return "wait"
-
-
 def route_after_replanner(state: PlannerState) -> str:
     retries = state.get("retries", [])
     done = state.get("done", False)
@@ -366,20 +346,11 @@ graph.add_edge("coordinator", "restaurants")
 graph.add_edge("coordinator", "weather")
 graph.add_edge("coordinator", "events")
 
-graph.add_edge("transport", "coordinator")
-graph.add_edge("hotels", "coordinator")
-graph.add_edge("restaurants", "coordinator")
-graph.add_edge("weather", "coordinator")
-graph.add_edge("events", "coordinator")
-
-graph.add_conditional_edges(
-    "coordinator",
-    route_after_coordinator,
-    {
-        "replanner": "replanner",
-        "wait": "coordinator",
-    },
-)
+graph.add_edge("transport", "replanner")
+graph.add_edge("hotels", "replanner")
+graph.add_edge("restaurants", "replanner")
+graph.add_edge("weather", "replanner")
+graph.add_edge("events", "replanner")
 
 graph.add_conditional_edges(
     "replanner",

@@ -5,8 +5,7 @@ from contextlib import AsyncExitStack
 
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
-from groq import Groq
-from config import MODEL_NAME
+from config import llm_model
 from utils.logger import get_logger
 from utils.error_handler import ClientError
 
@@ -18,10 +17,10 @@ logger = get_logger("MCPClient")
 
 
 class MCPClient:
-    def __init__(self, api_key_env: str = "GROQ_API_KEY"):
+    def __init__(self):
         self.session: Optional[ClientSession] = None
         self.exit_stack = AsyncExitStack()
-        self.groq = Groq(api_key=os.environ.get(api_key_env))
+        self.groq = llm_model
         self.tools: List = []
         self.client_name = "Generic"
 
@@ -52,84 +51,103 @@ class MCPClient:
             logger.error(f"[{self.client_name}] Connection failed: {e}")
             raise ClientError(str(e), client_name=self.client_name)
 
+    def _build_system_prompt(self) -> str:
+        tool_names = [tool.name for tool in self.tools]
+        return (
+            f"You are a {self.client_name} assistant. You have access to these tools: {tool_names}. "
+            f"When the user asks a question, call the most appropriate tool with the correct parameters. "
+            f"Only use tools that are listed above. Do not invent tool names or parameters."
+        )
+
+    def _select_best_tool(self, query: str) -> tuple[str, dict]:
+        """Deterministically select the best tool and extract params from the query
+        using the LLM, bypassing Groq's unreliable tool_choice mechanism."""
+        tool_descriptions = []
+        for tool in self.tools:
+            schema = json.dumps(tool.inputSchema, indent=2)
+            tool_descriptions.append(
+                f"Tool: {tool.name}\nDescription: {tool.description}\nParameters schema:\n{schema}"
+            )
+
+        selection_prompt = (
+            "Given the user query and available tools, respond with ONLY valid JSON (no markdown, no extra text).\n"
+            "Pick the single best tool and extract the parameters from the query.\n\n"
+            f"Available tools:\n" + "\n---\n".join(tool_descriptions) + "\n\n"
+            f"User query: {query}\n\n"
+            "Respond with exactly this JSON format:\n"
+            '{"tool": "<tool_name>", "args": {<extracted_parameters>}}\n'
+            "Rules:\n"
+            "- Only use tool names from the list above\n"
+            "- Only include parameters defined in the schema\n"
+            "- Use correct types (string, number, etc.)\n"
+            "- For optional parameters, only include them if the query mentions them"
+        )
+
+        response = self.groq.invoke(
+            messages=[{"role": "user", "content": selection_prompt}],
+            temperature=0,
+        )
+
+        raw = response.choices[0].message.content.strip()
+        # Strip markdown code fences if present
+        if raw.startswith("```"):
+            raw = raw.split("\n", 1)[1] if "\n" in raw else raw[3:]
+            if raw.endswith("```"):
+                raw = raw[:-3]
+            raw = raw.strip()
+
+        parsed = json.loads(raw)
+        return parsed["tool"], parsed.get("args", {})
+
     async def process_query(self, query: str) -> str:
         logger.info(f"[{self.client_name}] Processing query: {query[:100]}...")
         try:
-            messages = [{"role": "user", "content": query}]
+            # Step 1: Use LLM to select tool and extract params deterministically
+            tool_name, tool_args = self._select_best_tool(query)
 
-            available_tools = [
-                {
-                    "type": "function",
-                    "function": {
-                        "name": tool.name,
-                        "description": tool.description,
-                        "parameters": tool.inputSchema,
-                    },
-                }
-                for tool in self.tools
-            ]
+            valid_tool_names = {tool.name for tool in self.tools}
+            if tool_name not in valid_tool_names:
+                logger.warning(
+                    f"[{self.client_name}] LLM selected invalid tool '{tool_name}', "
+                    f"falling back to first tool"
+                )
+                tool_name = self.tools[0].name
 
-            response = self.groq.chat.completions.create(
-                messages=messages,
-                model=MODEL_NAME,
-                tools=available_tools,
-                tool_choice="auto",
+            logger.info(
+                f"[{self.client_name}] Calling tool: {tool_name} | args={tool_args}"
             )
 
-            response_message = response.choices[0].message
-            messages.append(response_message)
+            # Step 2: Call the MCP tool directly
+            result = await self.session.call_tool(tool_name, tool_args)
+            tool_result = result.content[0].text if result.content else str(result)
+            logger.info(
+                f"[{self.client_name}] Tool {tool_name} returned {len(tool_result)} chars"
+            )
 
-            output = []
+            # Step 3: Summarize the tool output
+            messages = [
+                {
+                    "role": "system",
+                    "content": (
+                        "Summarize the tool results clearly for the user. "
+                        "Do not invent information beyond what the tool returned. "
+                        "Only simplify and rephrase."
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": f"Query: {query}\n\nTool result:\n{tool_result}",
+                },
+            ]
 
-            if response_message.content:
-                output.append(response_message.content)
+            followup = self.groq.invoke(
+                messages=messages,
+                temperature=0,
+            )
 
-            if response_message.tool_calls:
-                for tool_call in response_message.tool_calls:
-                    tool_name = tool_call.function.name
-                    try:
-                        tool_args = json.loads(tool_call.function.arguments)
-                    except json.JSONDecodeError:
-                        tool_args = {}
-
-                    logger.info(
-                        f"[{self.client_name}] Calling tool: {tool_name} | args={tool_args}"
-                    )
-
-                    result = await self.session.call_tool(tool_name, tool_args)
-
-                    tool_result = (
-                        result.content[0].text if result.content else str(result)
-                    )
-                    logger.info(
-                        f"[{self.client_name}] Tool {tool_name} returned {len(tool_result)} chars"
-                    )
-                    messages.append(
-                        {
-                            "tool_call_id": tool_call.id,
-                            "role": "tool",
-                            "name": tool_name,
-                            "content": tool_result,
-                        }
-                    )
-
-                followup = self.groq.chat.completions.create(
-                    messages=messages
-                    + [
-                        {
-                            "role": "system",
-                            "content": f"Summarize the tool results clearly for the user. "
-                            f"Do not invent information beyond what the tool returned. "
-                            f"Only simplify and rephrase.",
-                        }
-                    ],
-                    model=MODEL_NAME,
-                )
-                if followup.choices[0].message.content:
-                    output.append(followup.choices[0].message.content)
-
+            summary = followup.choices[0].message.content
             logger.info(f"[{self.client_name}] Query processed successfully")
-            return "\n".join(output)
+            return summary or tool_result
 
         except Exception as e:
             logger.error(f"[{self.client_name}] Query processing failed: {e}")
