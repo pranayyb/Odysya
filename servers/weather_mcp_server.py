@@ -1,60 +1,51 @@
-from typing import Any, Dict
-import httpx
+from typing import Any
 from mcp.server.fastmcp import FastMCP
-import logging
 import asyncio
 from interfaces.mcp_server_interface import MCPServer
 from data.weather_data import WEATHER_DATA
-from config import WEATHER_MOCK_BOOL
+from utils.logger import get_logger
+from utils.http_client import async_get
+from config import WEATHER_MOCK_BOOL, OPENWEATHER_API_BASE, OPENWEATHER_API_KEY
+
+logger = get_logger("WeatherMCPServer")
 
 
 class WeatherMCPServer(MCPServer):
     def __init__(self):
         self.mcp = FastMCP("weather")
         self.USE_MOCK_DATA = WEATHER_MOCK_BOOL
-        self.API_BASE = "https://api.openweathermap.org/data/2.5"
-        self.API_KEY = "YOUR_OPENWEATHER_API_KEY"
+        self.API_BASE = OPENWEATHER_API_BASE
+        self.API_KEY = OPENWEATHER_API_KEY
         self.USER_AGENT = "weather-app/1.0"
         self.MOCK_WEATHER = WEATHER_DATA
+        logger.info(f"WeatherMCPServer initialized | mock_mode={self.USE_MOCK_DATA}")
 
     async def register_tools(self) -> None:
         @self.mcp.tool()
         async def get_current_weather(city: str) -> str:
+            logger.info(f"get_current_weather | city={city}")
             mock_indicator = " (MOCK DATA)" if self.USE_MOCK_DATA else ""
-            params = {"q": city, "units": "metric"}
-            data = await self.make_weather_request("weather", params)
+            data = await self.make_weather_request(
+                "weather", {"q": city, "units": "metric"}
+            )
             if not data:
+                logger.warning(f"No weather data for {city}")
                 return f"No weather data available for {city}.{mock_indicator}"
+            logger.info(f"get_current_weather returned data for {city}")
             return self.format_current_weather(data) + mock_indicator
 
         @self.mcp.tool()
         async def get_weather_forecast(city: str, days: int = 3) -> str:
+            logger.info(f"get_weather_forecast | city={city} | days={days}")
             mock_indicator = " (MOCK DATA)" if self.USE_MOCK_DATA else ""
-            params = {"q": city, "cnt": days}
-            data = await self.make_weather_request("forecast", params)
+            data = await self.make_weather_request("forecast", {"q": city, "cnt": days})
             if not data:
-                return f"No forecast data available for {city}.{mock_indicator}"
+                return f"No forecast data for {city}.{mock_indicator}"
+            logger.info(f"get_weather_forecast returned data for {city}")
             return self.format_forecast(data) + mock_indicator
 
-        @self.mcp.tool()
-        async def toggle_mock_mode(enable_mock: bool = True) -> str:
-            return self.toggle_mock_mode(enable_mock)
-
-    async def handle_request(self, tool_name: str, params: Dict[str, Any]) -> Any:
-        try:
-            return await self.mcp.call_tool(tool_name, params)
-        except Exception as e:
-            logging.error(f"Error handling request {tool_name}: {e}")
-            return {"error": str(e)}
-
-    def toggle_mock_mode(self, enable_mock: bool) -> str:
-        self.USE_MOCK_DATA = enable_mock
-        mode = "MOCK DATA" if self.USE_MOCK_DATA else "REAL API"
-        return f"Weather Server mode switched to: {mode}"
-
     def start(self) -> None:
-        logging.info("Starting Weather MCP Server")
-        logging.info(f"Mock mode enabled: {self.USE_MOCK_DATA}")
+        logger.info("Starting Weather MCP Server")
         asyncio.run(self.register_tools())
         self.mcp.run(transport="stdio")
 
@@ -63,23 +54,18 @@ class WeatherMCPServer(MCPServer):
     ) -> dict[str, Any] | None:
         if self.USE_MOCK_DATA:
             return self.get_mock_response(endpoint, params)
-
         url = f"{self.API_BASE}/{endpoint}"
-        headers = {"User-Agent": self.USER_AGENT}
         params = params or {}
         params["appid"] = self.API_KEY
         params["units"] = "metric"
-
-        async with httpx.AsyncClient() as client:
-            try:
-                response = await client.get(
-                    url, headers=headers, params=params, timeout=30.0
-                )
-                response.raise_for_status()
-                return response.json()
-            except Exception as e:
-                logging.error(f"Weather API request failed: {e}")
-                return None
+        headers = {"User-Agent": self.USER_AGENT}
+        data = await async_get(url, params=params, headers=headers)
+        if "error" in data:
+            logger.error(
+                f"Weather API failed | endpoint={endpoint} | error={data['error']}"
+            )
+            return None
+        return data
 
     def get_mock_response(
         self, endpoint: str, params: dict = None
@@ -108,24 +94,15 @@ class WeatherMCPServer(MCPServer):
         return None
 
     def format_current_weather(self, data: dict) -> str:
-        return f"""
-        Weather in {data['city']}
-        Condition: {data['condition']}
-        Temperature: {data['temp']}°C (Feels like {data['feels_like']}°C)
-        Humidity: {data['humidity']}%
-        Wind: {data['wind']} km/h
-        """
+        return f"Weather in {data['city']} | Condition: {data['condition']} | Temp: {data['temp']}C (Feels like {data['feels_like']}C) | Humidity: {data['humidity']}% | Wind: {data['wind']} km/h"
 
     def format_forecast(self, data: dict) -> str:
-        lines = [f"Weather Forecast for {data['city']}:"]
+        lines = [f"Forecast for {data['city']}:"]
         for d in data["forecast"]:
-            lines.append(f"- {d['day']}: {d['temp']}°C, {d['condition']}")
+            lines.append(f"  {d['day']}: {d['temp']}C, {d['condition']}")
         return "\n".join(lines)
 
 
 if __name__ == "__main__":
-    logging.basicConfig(
-        level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
-    )
     server = WeatherMCPServer()
     server.start()

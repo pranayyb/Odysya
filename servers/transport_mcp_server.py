@@ -1,64 +1,74 @@
-from typing import Any, Dict
-import httpx
+from typing import Any
 from mcp.server.fastmcp import FastMCP
-import logging
 import datetime
 import asyncio
 from interfaces.mcp_server_interface import MCPServer
-from data.transport_data import FLIGHT_DATA
-from data.transport_data import TRAIN_DATA
-from data.transport_data import PUBLIC_TRANSPORT_DATA
-from config import TRANSPORT_MOCK_BOOL
+from data.transport_data import FLIGHT_DATA, TRAIN_DATA, PUBLIC_TRANSPORT_DATA
+from utils.logger import get_logger
+from utils.http_client import async_get
+from config import TRANSPORT_MOCK_BOOL, TRANSPORT_API_BASE, TRANSPORT_API_KEY
+
+logger = get_logger("TransportMCPServer")
 
 
 class TransportMCPServer(MCPServer):
     def __init__(self):
         self.mcp = FastMCP("transport")
         self.USE_MOCK_DATA = TRANSPORT_MOCK_BOOL
-        self.API_BASE = "https://transport-api.example.com/v1"
-        self.API_KEY = "YOUR_TRANSPORT_API_KEY"
+        self.API_BASE = TRANSPORT_API_BASE
+        self.API_KEY = TRANSPORT_API_KEY
         self.USER_AGENT = "transport-app/1.0"
         self.MOCK_FLIGHTS = FLIGHT_DATA
         self.MOCK_TRAINS = TRAIN_DATA
         self.MOCK_PUBLIC_TRANSPORT = PUBLIC_TRANSPORT_DATA
+        logger.info(f"TransportMCPServer initialized | mock_mode={self.USE_MOCK_DATA}")
 
     async def register_tools(self) -> None:
         @self.mcp.tool()
         async def search_flights(
             origin: str, destination: str, date: str = None
         ) -> str:
+            logger.info(f"search_flights | {origin} -> {destination} | date={date}")
             mock_indicator = " (MOCK DATA)" if self.USE_MOCK_DATA else ""
-            url = f"{self.API_BASE}/flights/search"
             params = {
                 "origin": origin,
                 "destination": destination,
                 "date": date or str(datetime.date.today()),
             }
-            data = await self.make_transport_request(url, params)
+            data = await self.make_transport_request(
+                f"{self.API_BASE}/flights/search", params
+            )
             if not data or "flights" not in data:
+                logger.warning(f"No flights found for {origin} -> {destination}")
                 return f"No flights found.{mock_indicator}"
-            return "\n---\n".join([self.format_flight(f) for f in data["flights"]])
+            result = "\n---\n".join([self.format_flight(f) for f in data["flights"]])
+            logger.info(f"search_flights returned {len(data['flights'])} flights")
+            return result
 
         @self.mcp.tool()
         async def search_trains(origin: str, destination: str, date: str = None) -> str:
+            logger.info(f"search_trains | {origin} -> {destination} | date={date}")
             mock_indicator = " (MOCK DATA)" if self.USE_MOCK_DATA else ""
-            url = f"{self.API_BASE}/trains/search"
             params = {
                 "origin": origin,
                 "destination": destination,
                 "date": date or str(datetime.date.today()),
             }
-            data = await self.make_transport_request(url, params)
+            data = await self.make_transport_request(
+                f"{self.API_BASE}/trains/search", params
+            )
             if not data or "trains" not in data:
                 return f"No trains found.{mock_indicator}"
             return "\n---\n".join([self.format_train(t) for t in data["trains"]])
 
         @self.mcp.tool()
         async def search_public_transport(latitude: float, longitude: float) -> str:
+            logger.info(f"search_public_transport | lat={latitude}, lon={longitude}")
             mock_indicator = " (MOCK DATA)" if self.USE_MOCK_DATA else ""
-            url = f"{self.API_BASE}/public/search"
-            params = {"latitude": latitude, "longitude": longitude}
-            data = await self.make_transport_request(url, params)
+            data = await self.make_transport_request(
+                f"{self.API_BASE}/public/search",
+                {"latitude": latitude, "longitude": longitude},
+            )
             if not data or "public_transport" not in data:
                 return f"No public transport found.{mock_indicator}"
             return "\n---\n".join(
@@ -67,10 +77,11 @@ class TransportMCPServer(MCPServer):
 
         @self.mcp.tool()
         async def get_transport_details(option_id: str) -> str:
+            logger.info(f"get_transport_details | id={option_id}")
             mock_indicator = " (MOCK DATA)" if self.USE_MOCK_DATA else ""
-            url = f"{self.API_BASE}/details"
-            params = {"id": option_id}
-            data = await self.make_transport_request(url, params)
+            data = await self.make_transport_request(
+                f"{self.API_BASE}/details", {"id": option_id}
+            )
             if not data:
                 return f"No details for {option_id}.{mock_indicator}"
             if "airline" in data:
@@ -81,25 +92,8 @@ class TransportMCPServer(MCPServer):
                 return self.format_public(data)
             return f"Unknown transport type.{mock_indicator}"
 
-        @self.mcp.tool()
-        async def toggle_mock_mode(enable_mock: bool = True) -> str:
-            return self.toggle_mock_mode(enable_mock)
-
-    async def handle_request(self, tool_name: str, params: Dict[str, Any]) -> Any:
-        try:
-            return await self.mcp.call_tool(tool_name, params)
-        except Exception as e:
-            logging.error(f"Error: {e}")
-            return {"error": str(e)}
-
-    def toggle_mock_mode(self, enable_mock: bool) -> str:
-        self.USE_MOCK_DATA = enable_mock
-        mode = "MOCK DATA" if self.USE_MOCK_DATA else "REAL API"
-        return f"Transport Server mode switched to: {mode}"
-
     def start(self) -> None:
-        logging.info("Starting Transport MCP Server")
-        logging.info(f"Mock mode enabled: {self.USE_MOCK_DATA}")
+        logger.info("Starting Transport MCP Server")
         asyncio.run(self.register_tools())
         self.mcp.run(transport="stdio")
 
@@ -112,16 +106,11 @@ class TransportMCPServer(MCPServer):
             "Authorization": f"Bearer {self.API_KEY}",
             "User-Agent": self.USER_AGENT,
         }
-        async with httpx.AsyncClient() as client:
-            try:
-                response = await client.get(
-                    url, headers=headers, params=params, timeout=30.0
-                )
-                response.raise_for_status()
-                return response.json()
-            except Exception as e:
-                logging.error(f"Transport API failed: {e}")
-                return None
+        data = await async_get(url, params=params, headers=headers)
+        if "error" in data:
+            logger.error(f"Transport API failed | error={data['error']}")
+            return None
+        return data
 
     def get_mock_response(self, url: str, params: dict = None) -> dict[str, Any] | None:
         if "/flights/search" in url:
@@ -131,48 +120,23 @@ class TransportMCPServer(MCPServer):
         elif "/public/search" in url:
             return {"public_transport": self.MOCK_PUBLIC_TRANSPORT}
         elif "/details" in url:
-            all_options = (
+            for opt in (
                 self.MOCK_FLIGHTS + self.MOCK_TRAINS + self.MOCK_PUBLIC_TRANSPORT
-            )
-            for opt in all_options:
+            ):
                 if opt["id"] == params.get("id"):
                     return opt
         return None
 
     def format_flight(self, f: dict) -> str:
-        return f"""
-        ✈️ Flight {f['id']}
-        Airline: {f['airline']}
-        From: {f['from']} → To: {f['to']}
-        Departure: {f['departure']} | Arrival: {f['arrival']}
-        Duration: {f['duration']}
-        Price: {f['price']} {f['currency']}
-        """
+        return f"Flight {f['id']} | {f['airline']} | {f['from']} -> {f['to']} | Dep: {f['departure']} | Arr: {f['arrival']} | {f['duration']} | {f['price']} {f['currency']}"
 
     def format_train(self, t: dict) -> str:
-        return f"""
-        🚆 Train {t['id']}
-        Train: {t['train']}
-        From: {t['from']} → To: {t['to']}
-        Departure: {t['departure']} | Arrival: {t['arrival']}
-        Duration: {t['duration']}
-        Price: {t['price']} {t['currency']}
-        """
+        return f"Train {t['id']} | {t['train']} | {t['from']} -> {t['to']} | Dep: {t['departure']} | Arr: {t['arrival']} | {t['duration']} | {t['price']} {t['currency']}"
 
     def format_public(self, p: dict) -> str:
-        return f"""
-        🚌 Public Transport {p['id']}
-        Type: {p['type']}
-        Route: {p['route']}
-        Location: {p['location']}
-        Frequency: {p['frequency']}
-        Price: {p['price']} {p['currency']}
-        """
+        return f"Public {p['id']} | {p['type']} | Route: {p['route']} | {p['location']} | {p['frequency']} | {p['price']} {p['currency']}"
 
 
 if __name__ == "__main__":
-    logging.basicConfig(
-        level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
-    )
     server = TransportMCPServer()
     server.start()

@@ -1,24 +1,26 @@
 import asyncio
-from typing import Any, Dict
-import httpx
+from typing import Any
 from mcp.server.fastmcp import FastMCP
-import logging
 import random
-from data.hotel_data import HOTEL_DATA
-from data.hotel_data import HOTEL_DESTINATIONS
+from data.hotel_data import HOTEL_DATA, HOTEL_DESTINATIONS
 from interfaces.mcp_server_interface import MCPServer
-from config import HOTEL_MOCK_BOOL
+from utils.logger import get_logger
+from utils.http_client import async_get
+from config import HOTEL_MOCK_BOOL, BOOKING_API_BASE, RAPIDAPI_KEY
+
+logger = get_logger("HotelMCPServer")
 
 
 class HotelMCPServer(MCPServer):
     def __init__(self):
         self.mcp = FastMCP("hotel")
-        self.BOOKING_API_BASE = "https://booking-com.p.rapidapi.com/v1"
-        self.RAPIDAPI_KEY = "8f79364a7dmshf35dce4492b3da2p17f81fjsn70acc5d1eff8"
+        self.BOOKING_API_BASE = BOOKING_API_BASE
+        self.RAPIDAPI_KEY = RAPIDAPI_KEY
         self.USER_AGENT = "hotel-app/1.0"
         self.MOCK_LOCATIONS = HOTEL_DESTINATIONS
         self.MOCK_HOTELS = HOTEL_DATA
         self.USE_MOCK_DATA = HOTEL_MOCK_BOOL
+        logger.info(f"HotelMCPServer initialized | mock_mode={self.USE_MOCK_DATA}")
 
     async def register_tools(self) -> None:
         @self.mcp.tool()
@@ -29,16 +31,18 @@ class HotelMCPServer(MCPServer):
             checkin_date: str = "2024-12-01",
             checkout_date: str = "2024-12-02",
         ) -> str:
+            logger.info(
+                f"search_hotels called | location={location} | price={min_price}-{max_price}"
+            )
             mock_indicator = " (MOCK DATA)" if self.USE_MOCK_DATA else ""
             location_data = await self.search_location(location)
             if not location_data:
-                return f"Unable to find location: {location}. Please try a different location name.{mock_indicator}"
-
+                logger.warning(f"Location not found: {location}")
+                return f"Unable to find location: {location}.{mock_indicator}"
             dest_id = location_data.get("dest_id")
             dest_type = location_data.get("dest_type", "city")
             if not dest_id:
                 return f"Unable to get destination ID for {location}.{mock_indicator}"
-
             url = f"{self.BOOKING_API_BASE}/hotels/search"
             params = {
                 "dest_id": dest_id,
@@ -52,52 +56,46 @@ class HotelMCPServer(MCPServer):
                 "units": "metric",
                 "include_adjacency": "true",
             }
-
             data = await self.make_booking_request(url, params)
             if not data or "result" not in data:
+                logger.warning(f"No hotel data returned for {location}")
                 return f"Unable to fetch hotel data for this location.{mock_indicator}"
-
             hotels = data["result"]
             if not hotels:
                 return f"No hotels found in {location}.{mock_indicator}"
-
-            filtered_hotels = []
-            for hotel in hotels:
-                price = hotel.get("min_total_price", 0)
-                if price and min_price <= float(price) <= max_price:
-                    filtered_hotels.append(hotel)
-
+            filtered_hotels = [
+                h
+                for h in hotels
+                if h.get("min_total_price", 0)
+                and min_price <= float(h["min_total_price"]) <= max_price
+            ]
             if not filtered_hotels:
                 return f"No hotels found in {location} within price range ${min_price}-${max_price}.{mock_indicator}"
-
             hotel_list = [self.format_hotel(hotel) for hotel in filtered_hotels[:10]]
             result = f"Hotels in {location} (${min_price}-${max_price} price range){mock_indicator}:\n"
             result += "\n---\n".join(hotel_list)
             result += f"\n\nShowing {len(hotel_list)} hotels out of {len(filtered_hotels)} matching results."
-
+            logger.info(
+                f"search_hotels returned {len(hotel_list)} hotels for {location}"
+            )
             return result
 
         @self.mcp.tool()
         async def get_hotel_details(hotel_id: str) -> str:
+            logger.info(f"get_hotel_details called | hotel_id={hotel_id}")
             mock_indicator = " (MOCK DATA)" if self.USE_MOCK_DATA else ""
             url = f"{self.BOOKING_API_BASE}/hotels/details"
             params = {"hotel_id": hotel_id, "locale": "en-gb"}
             data = await self.make_booking_request(url, params)
             if not data:
                 return f"Unable to fetch hotel details.{mock_indicator}"
-
             name = data.get("hotel_name", "Unknown Hotel")
             description = data.get("description", "No description available")
             facilities = data.get("facilities", [])
             address = data.get("address", "Address not available")
             rating = data.get("review_score", "N/A")
-            details = f"""
-                        Hotel: {name}{mock_indicator}
-                        Rating: {rating}/10
-                        Address: {address}
-                        Description: {description}
-                        Facilities: {', '.join([f.get('name', '') for f in facilities]) if facilities else 'No facilities listed'}
-                        """
+            details = f"Hotel: {name}{mock_indicator}\nRating: {rating}/10\nAddress: {address}\nDescription: {description}\nFacilities: {', '.join([f.get('name', '') for f in facilities]) if facilities else 'No facilities listed'}"
+            logger.info(f"get_hotel_details returned details for {name}")
             return details
 
         @self.mcp.tool()
@@ -109,6 +107,9 @@ class HotelMCPServer(MCPServer):
             checkin_date: str = "2025-12-01",
             checkout_date: str = "2025-12-02",
         ) -> str:
+            logger.info(
+                f"search_hotels_by_coordinates | lat={latitude}, lon={longitude}"
+            )
             mock_indicator = " (MOCK DATA)" if self.USE_MOCK_DATA else ""
             url = f"{self.BOOKING_API_BASE}/hotels/search"
             params = {
@@ -127,42 +128,24 @@ class HotelMCPServer(MCPServer):
                 return f"Unable to fetch hotel data for this location.{mock_indicator}"
             hotels = data["result"]
             if not hotels:
-                return f"No hotels found near coordinates ({latitude}, {longitude}).{mock_indicator}"
-
-            filtered_hotels = []
-            for hotel in hotels:
-                price = hotel.get("min_total_price", 0)
-                if price and min_price <= float(price) <= max_price:
-                    filtered_hotels.append(hotel)
-
+                return (
+                    f"No hotels found near ({latitude}, {longitude}).{mock_indicator}"
+                )
+            filtered_hotels = [
+                h
+                for h in hotels
+                if h.get("min_total_price", 0)
+                and min_price <= float(h["min_total_price"]) <= max_price
+            ]
             if not filtered_hotels:
-                return f"No hotels found near coordinates within price range ${min_price}-${max_price}.{mock_indicator}"
-
-            hotel_list = [self.format_hotel(hotel) for hotel in filtered_hotels[:10]]
-            result = f"Hotels near ({latitude}, {longitude}) (${min_price}-${max_price} price range){mock_indicator}:\n"
+                return f"No hotels found near coordinates within ${min_price}-${max_price}.{mock_indicator}"
+            hotel_list = [self.format_hotel(h) for h in filtered_hotels[:10]]
+            result = f"Hotels near ({latitude}, {longitude}) (${min_price}-${max_price}){mock_indicator}:\n"
             result += "\n---\n".join(hotel_list)
-            result += f"\n\nShowing {len(hotel_list)} hotels out of {len(filtered_hotels)} matching results."
             return result
 
-        @self.mcp.tool()
-        async def toggle_mock_mode(enable_mock: bool = True) -> str:
-            return self.toggle_mock_mode(enable_mock)
-
-    async def handle_request(self, tool_name: str, params: Dict[str, Any]) -> Any:
-        try:
-            return await self.mcp.call_tool(tool_name, params)
-        except Exception as e:
-            logging.error(f"Error handling request {tool_name}: {e}")
-            return {"error": str(e)}
-
-    def toggle_mock_mode(self, enable_mock: bool) -> str:
-        self.USE_MOCK_DATA = enable_mock
-        mode = "MOCK DATA" if self.USE_MOCK_DATA else "REAL API"
-        return f"Hotel Server mode switched to: {mode}"
-
     def start(self) -> None:
-        logging.info("Starting Hotel MCP Server")
-        logging.info(f"Mock mode enabled: {self.USE_MOCK_DATA}")
+        logger.info("Starting Hotel MCP Server")
         asyncio.run(self.register_tools())
         self.mcp.run(transport="stdio")
 
@@ -171,45 +154,34 @@ class HotelMCPServer(MCPServer):
     ) -> dict[str, Any] | None:
         if self.USE_MOCK_DATA:
             return self.get_mock_response(url, params)
-
         headers = {
             "X-RapidAPI-Key": self.RAPIDAPI_KEY,
             "X-RapidAPI-Host": "booking-com.p.rapidapi.com",
             "User-Agent": self.USER_AGENT,
         }
-        async with httpx.AsyncClient() as client:
-            try:
-                response = await client.get(
-                    url, headers=headers, params=params, timeout=30.0
-                )
-                response.raise_for_status()
-                return response.json()
-            except Exception as e:
-                logging.error(f"API request failed: {e}")
-                return None
+        data = await async_get(url, params=params, headers=headers)
+        if "error" in data:
+            logger.error(
+                f"Booking API request failed | url={url} | error={data['error']}"
+            )
+            return None
+        return data
 
     def get_mock_response(self, url: str, params: dict = None) -> dict[str, Any] | None:
         if "/stays/search" in url:
             location_name = params.get("name", "").lower() if params else ""
             if location_name in self.MOCK_LOCATIONS:
                 return [self.MOCK_LOCATIONS[location_name]]
-            else:
-                return [
-                    {
-                        "dest_id": "99999",
-                        "dest_type": "city",
-                        "name": location_name.title(),
-                    }
-                ]
-
+            return [
+                {"dest_id": "99999", "dest_type": "city", "name": location_name.title()}
+            ]
         elif "/hotels/search" in url:
             hotels = self.MOCK_HOTELS.copy()
             for hotel in hotels:
-                base_price = hotel["min_total_price"]
-                variation = random.uniform(0.8, 1.3)
-                hotel["min_total_price"] = round(base_price * variation, 2)
+                hotel["min_total_price"] = round(
+                    hotel["min_total_price"] * random.uniform(0.8, 1.3), 2
+                )
             return {"result": hotels}
-
         elif "/hotels/details" in url:
             hotel_id = params.get("hotel_id") if params else None
             for hotel in self.MOCK_HOTELS:
@@ -218,35 +190,19 @@ class HotelMCPServer(MCPServer):
             return {
                 "hotel_id": hotel_id,
                 "hotel_name": "Mock Hotel",
-                "description": "This is a mock hotel for testing purposes.",
+                "description": "Mock hotel for testing.",
                 "facilities": [{"name": "WiFi"}, {"name": "Parking"}],
-                "address": "123 Mock Street, Test City",
+                "address": "123 Mock St",
                 "review_score": 7.5,
             }
-
         return None
 
     def format_hotel(self, hotel: dict) -> str:
-        name = hotel.get("hotel_name", "Unknown Hotel")
-        price = hotel.get("min_total_price", "N/A")
-        currency = hotel.get("currency_code", "USD")
-        rating = hotel.get("review_score", "N/A")
-        address = hotel.get("address", "Address not available")
-        distance_to_cc = hotel.get("distance_to_cc", "N/A")
-
-        return f"""
-                Hotel: {name}
-                Price: {price} {currency} (total)
-                Rating: {rating}/10
-                Address: {address}
-                Distance to city center: {distance_to_cc}
-                Hotel ID: {hotel.get("hotel_id", "N/A")}
-                """
+        return f"Hotel: {hotel.get('hotel_name', 'Unknown')} | Price: {hotel.get('min_total_price', 'N/A')} {hotel.get('currency_code', 'USD')} | Rating: {hotel.get('review_score', 'N/A')}/10 | Address: {hotel.get('address', 'N/A')} | Distance: {hotel.get('distance_to_cc', 'N/A')} | ID: {hotel.get('hotel_id', 'N/A')}"
 
     async def search_location(self, location: str) -> dict | None:
         url = f"{self.BOOKING_API_BASE}/stays/search"
         params = {"name": location, "locale": "en-gb"}
-
         data = await self.make_booking_request(url, params)
         if data and len(data) > 0:
             return data[0]
@@ -254,8 +210,5 @@ class HotelMCPServer(MCPServer):
 
 
 if __name__ == "__main__":
-    logging.basicConfig(
-        level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
-    )
     server = HotelMCPServer()
     server.start()

@@ -7,13 +7,13 @@ from models.itinerary import Itinerary
 
 class PlannerState(TypedDict):
     trip: TripRequest
-    # results: Dict[str, AgentResponse]
     hotel_result: AgentResponse | None
     transport_result: AgentResponse | None
     restaurant_result: AgentResponse | None
     weather_result: AgentResponse | None
     event_result: AgentResponse | None
     retries: list[str]
+    retry_count: int
     notes: str
     done: bool
     aggregated_plan: Itinerary | None
