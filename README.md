@@ -9,27 +9,50 @@
 ## Features
 
 ### Multi-Agent Orchestration
-Six specialized AI agents run in parallel, each handling a different aspect of trip planning:
+Five specialized domain agents run **in parallel** via a LangGraph StateGraph, each handling a different aspect of trip planning:
 
-- **Hotel Agent** — Searches accommodations based on budget, location, and dates
-- **Transport Agent** — Finds transport options (flights, trains, buses) to the destination
-- **Restaurant Agent** — Discovers dining options matching user preferences
-- **Weather Agent** — Provides weather forecasts for the travel dates
-- **Event Agent** — Finds local events and activities happening during the trip
-- **Itinerary Agent** — Synthesizes all collected data into a coherent daily schedule
+- **Hotel Agent** — Searches accommodations by location, dates, budget, and amenities. Integrates with Booking.com (RapidAPI).
+- **Transport Agent** — Finds flights, trains, and buses to the destination with pricing and schedules.
+- **Restaurant Agent** — Discovers dining options matching cuisine preferences and budget. Integrates with Yelp.
+- **Weather Agent** — Provides day-by-day weather forecasts to plan weather-appropriate activities. Integrates with OpenWeatherMap.
+- **Event Agent** — Finds local events, festivals, and activities happening during the travel dates.
+
+A sixth agent, the **Itinerary Agent**, synthesizes all collected data into a detailed day-by-day schedule with specific timings, costs, and backup plans.
 
 ### Intelligent Replanning
-- **Adaptive Retry Logic** — The ReplanAgent analyzes agent results and selectively retries failed agents (up to 3 attempts)
-- **Graceful Degradation** — If agents fail after retries, the itinerary is generated with the best available data
-- **Fan-out/Fan-in Pattern** — Agents execute concurrently and converge at the replanner for evaluation
+- **LLM-Powered ReAct Analysis** — The ReplanAgent uses a **Think → Act → Decide** methodology to evaluate all agent results against the trip requirements.
+- **Selective Retry** — Only failed or inadequate agents are re-run, successful agents are skipped on retry loops.
+- **Issue Tracking** — The replanner identifies specific issues (e.g. "hotels exceed budget") and logs them for traceability.
+- **Graceful Degradation** — If agents still fail after retries, the aggregator substitutes fallback data and the itinerary is generated with whatever is available.
 
-### Technical Highlights
-- **FastAPI** endpoint for HTTP access (`POST /plan`)
-- **Model Context Protocol (MCP)** for standardized agent-to-server communication via stdio
-- **LangGraph StateGraph** for orchestrating the concurrent multi-agent workflow
-- **Pydantic** models for type-safe data throughout the pipeline
-- **Groq** (LLaMA 3.3 70B) as the LLM backend
-- **Mock mode** for development/testing without external API keys
+### Grounded Itinerary Generation
+- **Data-Driven Output** — The itinerary prompt explicitly forbids the LLM from hallucinating venue names, prices, or events. It may only reference data returned by the agents.
+
+### Model Context Protocol (MCP)
+- **Full MCP Implementation** — Each domain has its own MCP server and client, communicating over stdio transport.
+- **Dynamic Tool Discovery** — Clients auto-discover available tools from the server on connection.
+- **LLM-Based Tool Selection** — The MCP client uses the LLM to pick the best tool and extract parameters from a natural language query, with full schema awareness.
+- **3-Step Query Pipeline** — (1) LLM selects tool + extracts params → (2) MCP tool executed directly → (3) LLM summarizes the raw output into a clean response.
+- **Structured Output Parsing** — Raw tool results are parsed into typed Pydantic models (e.g. `Hotels`, `Weather`, `Transport`) via LLM structured output.
+
+### Dual-Mode Data (Mock & Live APIs)
+- **Independent Mock Toggles** — Each domain has its own `*_MOCK` environment variable, so you can mix mock and real data per service.
+- **Realistic Mock Data** — Multi-city coverage with real hotel/restaurant names, plausible prices, ratings, and facilities for development without API keys.
+- **Mock Indicator Tagging** — Responses include "(MOCK DATA)" labels when mock mode is active.
+- **Real API Integrations** — Pre-configured for Booking.com (RapidAPI), Yelp, and OpenWeatherMap(Not implemented though); event and transport APIs are ready to plug in.
+
+### Resilience & Error Handling
+- **Typed Error Hierarchy** — Domain-specific exceptions (`AgentError`, `ToolError`, `ClientError`, `ServerError`) with auto-logging and HTTP-style error codes.
+- **HTTP Retry with Exponential Backoff** — External API calls retry up to 3 times with 1.5× backoff delays and latency logging.
+- **Per-Agent Failure Isolation** — A single agent failure never crashes the graph; other agents continue independently.
+- **Async Throughout** — All agent execution, MCP communication, and HTTP calls are non-blocking.
+
+
+### API & Interface Design
+- **FastAPI REST Endpoint** — `POST /plan` accepts a `TripRequest` and returns a structured JSON response with the itinerary, recommendations, retry count, and notes.
+- **Input Validation** — Pydantic-based validation of destination, dates, preferences, and budget with clear error messages.
+- **Health Check** — `GET /health` for monitoring and load balancer readiness.
+- **ABC-Based Contracts** — `MCPServer`, `MCPClient`, and `AgentToolInterface` abstract base classes ensure consistent patterns across all 5 domains, making it easy to add new agents.
 
 ## Architecture
 
