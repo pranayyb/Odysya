@@ -1,12 +1,16 @@
 import asyncio
 import sys
 from interfaces.mcp_client_interface import MCPClient
+from utils.logger import get_logger
+
+logger = get_logger("RestaurantMCPClient")
 
 
 class RestaurantMCPClient(MCPClient):
     def __init__(self):
         super().__init__()
         self.client_name = "Restaurant"
+        logger.info("RestaurantMCPClient initialized")
 
 
 async def main():
