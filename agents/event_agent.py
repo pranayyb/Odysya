@@ -1,11 +1,12 @@
 import asyncio
-import logging
 from langchain.tools import StructuredTool
 from models.event import Events
 from tools.event_tools import EventTools
 from config import llm_model
+from utils.logger import get_logger
+from utils.error_handler import AgentError
 
-logger = logging.getLogger("EventAgent")
+logger = get_logger("EventAgent")
 
 
 class EventAgent:
@@ -13,6 +14,7 @@ class EventAgent:
         self.tools_client = EventTools()
         self.llm_structured = llm_model.with_structured_output(Events)
         self.search_events_tool = self._create_structured_tool()
+        logger.info("EventAgent initialized")
 
     def _create_structured_tool(self) -> StructuredTool:
         return StructuredTool.from_function(
@@ -22,13 +24,17 @@ class EventAgent:
         )
 
     async def search_events(self, prompt: str) -> str:
+        logger.info(f"EventAgent.search_events | prompt={prompt[:80]}...")
         try:
-            return await self.tools_client.run(prompt)
+            result = await self.tools_client.run(prompt)
+            logger.info("EventAgent.search_events completed")
+            return result
         except Exception as e:
-            logger.error(f"Error in event search: {e}")
-            return f"Error: {e}"
+            logger.error(f"EventAgent.search_events failed | error={e}")
+            raise AgentError(str(e), agent_name="EventAgent")
 
     async def search_and_format(self, query: str) -> Events:
+        logger.info(f"EventAgent.search_and_format | query={query[:80]}...")
         try:
             tool_output = await self.search_events(query)
             response = self.llm_structured.invoke(
@@ -40,14 +46,13 @@ class EventAgent:
                     {"role": "user", "content": tool_output},
                 ]
             )
+            logger.info(
+                f"EventAgent.search_and_format completed | success={response.success if hasattr(response, 'success') else True}"
+            )
             return response
         except Exception as e:
-            logger.error(f"Error in search_and_format: {e}")
-            return Events(
-                success=False,
-                events=[],
-                notes=f"Error occurred during search: {str(e)}",
-            )
+            logger.error(f"EventAgent.search_and_format failed | error={e}")
+            raise AgentError(str(e), agent_name="EventAgent")
 
     def get_tool(self) -> StructuredTool:
         return self.search_events_tool

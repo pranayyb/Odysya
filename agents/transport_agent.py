@@ -1,11 +1,12 @@
 import asyncio
-import logging
 from langchain.tools import StructuredTool
 from models.transport import Transport
 from tools.transport_tools import TransportTools
 from config import llm_model
+from utils.logger import get_logger
+from utils.error_handler import AgentError
 
-logger = logging.getLogger("TransportAgent")
+logger = get_logger("TransportAgent")
 
 
 class TransportAgent:
@@ -13,6 +14,7 @@ class TransportAgent:
         self.tools_client = TransportTools()
         self.llm_structured = llm_model.with_structured_output(Transport)
         self.search_transports_tool = self._create_structured_tool()
+        logger.info("TransportAgent initialized")
 
     def _create_structured_tool(self) -> StructuredTool:
         return StructuredTool.from_function(
@@ -22,13 +24,17 @@ class TransportAgent:
         )
 
     async def search_transports(self, prompt: str) -> str:
+        logger.info(f"TransportAgent.search_transports | prompt={prompt[:80]}...")
         try:
-            return await self.tools_client.run(prompt)
+            result = await self.tools_client.run(prompt)
+            logger.info("TransportAgent.search_transports completed")
+            return result
         except Exception as e:
-            logger.error(f"Error in transport search: {e}")
-            return f"Error: {e}"
+            logger.error(f"TransportAgent.search_transports failed | error={e}")
+            raise AgentError(str(e), agent_name="TransportAgent")
 
     async def search_and_format(self, query: str) -> Transport:
+        logger.info(f"TransportAgent.search_and_format | query={query[:80]}...")
         try:
             tool_output = await self.search_transports(query)
             response = self.llm_structured.invoke(
@@ -40,14 +46,13 @@ class TransportAgent:
                     {"role": "user", "content": tool_output},
                 ]
             )
+            logger.info(
+                f"TransportAgent.search_and_format completed | success={response.success if hasattr(response, 'success') else True}"
+            )
             return response
         except Exception as e:
-            logger.error(f"Error in search_and_format: {e}")
-            return Transport(
-                success=False,
-                transport=[],
-                notes=f"Error occurred during search: {str(e)}",
-            )
+            logger.error(f"TransportAgent.search_and_format failed | error={e}")
+            raise AgentError(str(e), agent_name="TransportAgent")
 
     def get_tool(self) -> StructuredTool:
         return self.search_transports_tool
