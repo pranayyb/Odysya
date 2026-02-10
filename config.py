@@ -9,6 +9,7 @@ MODEL_NAME = os.getenv("MODEL_NAME", "llama-3.3-70b-versatile")
 llm_model = ChatGroq(
     model=MODEL_NAME,
     api_key=os.getenv("GROQ_API_KEY"),
+    temperature=0,
 )
 
 RAPIDAPI_KEY = os.getenv("RAPIDAPI_KEY", "")

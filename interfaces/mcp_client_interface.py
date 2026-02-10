@@ -83,12 +83,9 @@ class MCPClient:
             "- For optional parameters, only include them if the query mentions them"
         )
 
-        response = self.groq.invoke(
-            messages=[{"role": "user", "content": selection_prompt}],
-            temperature=0,
-        )
+        response = self.groq.invoke([{"role": "user", "content": selection_prompt}])
 
-        raw = response.choices[0].message.content.strip()
+        raw = response.content.strip()
         # Strip markdown code fences if present
         if raw.startswith("```"):
             raw = raw.split("\n", 1)[1] if "\n" in raw else raw[3:]
@@ -140,12 +137,9 @@ class MCPClient:
                 },
             ]
 
-            followup = self.groq.invoke(
-                messages=messages,
-                temperature=0,
-            )
+            followup = self.groq.invoke(messages)
 
-            summary = followup.choices[0].message.content
+            summary = followup.content
             logger.info(f"[{self.client_name}] Query processed successfully")
             return summary or tool_result
 
