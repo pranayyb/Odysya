@@ -203,6 +203,7 @@ All configuration is in `config.py` and can be overridden with environment varia
 odysya/
 ├── main.py                 # FastAPI app — /health, /plan endpoints
 ├── config.py               # Configuration and environment variables
+├── test_workflow.py        # Workflow testing script
 ├── agents/                 # AI agents
 │   ├── planner_agent.py    # LangGraph StateGraph orchestration
 │   ├── replanner_agent.py  # ReplanAgent — retry logic
@@ -225,11 +226,17 @@ odysya/
 │   ├── weather_mcp_server.py
 │   └── event_mcp_server.py
 ├── tools/                  # Tool wrappers connecting agents to MCP clients
+│   ├── hotel_tools.py
+│   ├── restaurant_tools.py
+│   ├── transport_tools.py
+│   ├── weather_tools.py
+│   └── event_tools.py
 ├── models/                 # Pydantic data models
 │   ├── trip_request.py     # Input request schema
 │   ├── planner_state.py    # LangGraph state definition
 │   ├── itinerary.py        # Aggregated plan model
 │   ├── agent_response.py   # Standardized agent result wrapper
+│   ├── replanner.py        # ReplanDecision model
 │   ├── hotel.py            # Hotel/HotelItem models
 │   ├── restaurant.py       # Restaurant/RestaurantItem models
 │   ├── transport.py        # Transport/TransportItem models
@@ -247,14 +254,13 @@ odysya/
 │   ├── error_handler.py    # Typed error classes (AgentError, ToolError, etc.)
 │   ├── http_client.py      # HTTP client with retry + exponential backoff
 │   ├── validator.py        # Trip request validation
-│   └── pretty_print.py     # Output formatting
-├── data/                   # Mock data and user profiles
+│   └── get_personal_details.py  # User profile loading
+├── data/                   # Mock data
 │   ├── hotel_data.py
 │   ├── restaurant_data.py
 │   ├── transport_data.py
 │   ├── weather_data.py
-│   ├── events_data.py
-│   └── user_profiles/
+│   └── events_data.py
 └── logs/                   # Application logs (gitignored)
 ```
 
