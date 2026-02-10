@@ -1,0 +1,258 @@
+2026-02-11 00:15:14 | PlannerAgent              | INFO     | Building travel planner graph...
+2026-02-11 00:15:14 | PlannerAgent              | INFO     | Travel planner graph compiled successfully
+2026-02-11 00:15:15 | PlannerAgent              | INFO     | Building travel planner graph...
+2026-02-11 00:15:15 | PlannerAgent              | INFO     | Travel planner graph compiled successfully
+2026-02-11 00:15:15 | Main                      | INFO     | Odysya starting up
+2026-02-11 00:15:49 | Main                      | INFO     | GET /health
+2026-02-11 00:15:54 | Main                      | INFO     | POST /plan | destination=Mumbai
+2026-02-11 00:15:54 | Validator                 | INFO     | Validated trip request: destination=Mumbai, dates=2025-06-01 to 2025-06-05, budget=2000.0
+2026-02-11 00:15:54 | Main                      | INFO     | Invoking travel planner graph...
+2026-02-11 00:15:54 | PlannerAgent              | INFO     | coordinator_node entered
+2026-02-11 00:15:54 | PlannerAgent              | INFO     | coordinator_node | retry_count=0 | retries=[]
+2026-02-11 00:15:54 | PlannerAgent              | INFO     | event_node started
+2026-02-11 00:15:54 | EventMCPClient            | INFO     | EventMCPClient initialized
+2026-02-11 00:15:54 | EventTools                | INFO     | EventTools initialized | server=servers.event_mcp_server
+2026-02-11 00:15:54 | EventAgent                | INFO     | EventAgent initialized
+2026-02-11 00:15:54 | EventAgent                | INFO     | EventAgent.search_and_format | query=Find events happening in Mumbai during 2025-06-01 to 2025-06-05...
+2026-02-11 00:15:54 | EventAgent                | INFO     | EventAgent.search_events | prompt=Find events happening in Mumbai during 2025-06-01 to 2025-06-05...
+2026-02-11 00:15:54 | EventTools                | INFO     | EventTools.run | query=Find events happening in Mumbai during 2025-06-01 to 2025-06-05...
+2026-02-11 00:15:54 | MCPClient                 | INFO     | [Event] Connecting to server: servers.event_mcp_server
+2026-02-11 00:15:54 | PlannerAgent              | INFO     | hotel_node started
+2026-02-11 00:15:54 | HotelMCPClient            | INFO     | HotelMCPClient initialized
+2026-02-11 00:15:54 | HotelTools                | INFO     | HotelTools initialized | server=servers.hotel_mcp_server
+2026-02-11 00:15:54 | HotelAgent                | INFO     | HotelAgent initialized
+2026-02-11 00:15:54 | HotelAgent                | INFO     | HotelAgent.search_and_format | query=Find hotels in Mumbai from 2025-06-01 to 2025-06-05 within budget 2000.0...
+2026-02-11 00:15:54 | HotelAgent                | INFO     | HotelAgent.search_hotels | prompt=Find hotels in Mumbai from 2025-06-01 to 2025-06-05 within budget 2000.0...
+2026-02-11 00:15:54 | HotelTools                | INFO     | HotelTools.run | query=Find hotels in Mumbai from 2025-06-01 to 2025-06-05 within budget 2000.0...
+2026-02-11 00:15:54 | MCPClient                 | INFO     | [Hotel] Connecting to server: servers.hotel_mcp_server
+2026-02-11 00:15:54 | PlannerAgent              | INFO     | restaurant_node started
+2026-02-11 00:15:54 | RestaurantMCPClient       | INFO     | RestaurantMCPClient initialized
+2026-02-11 00:15:54 | RestaurantTools           | INFO     | RestaurantTools initialized | server=servers.restaurant_mcp_server
+2026-02-11 00:15:54 | RestaurantAgent           | INFO     | RestaurantAgent initialized
+2026-02-11 00:15:54 | RestaurantAgent           | INFO     | RestaurantAgent.search_and_format | query=Find restaurants in Mumbai suitable for ['food'] during 2025-06-01 to 2025-06-05...
+2026-02-11 00:15:54 | RestaurantAgent           | INFO     | RestaurantAgent.search_restaurants | prompt=Find restaurants in Mumbai suitable for ['food'] during 2025-06-01 to 2025-06-05...
+2026-02-11 00:15:54 | RestaurantTools           | INFO     | RestaurantTools.run | query=Find restaurants in Mumbai suitable for ['food'] during 2025-06-01 to 2025-06-05...
+2026-02-11 00:15:54 | MCPClient                 | INFO     | [Restaurant] Connecting to server: servers.restaurant_mcp_server
+2026-02-11 00:15:54 | PlannerAgent              | INFO     | transport_node started
+2026-02-11 00:15:54 | TransportMCPClient        | INFO     | TransportMCPClient initialized
+2026-02-11 00:15:54 | TransportTools            | INFO     | TransportTools initialized | server=servers.transport_mcp_server
+2026-02-11 00:15:54 | TransportAgent            | INFO     | TransportAgent initialized
+2026-02-11 00:15:54 | TransportAgent            | INFO     | TransportAgent.search_and_format | query=Find transport options to reach Mumbai from the starting point on 2025-06-01...
+2026-02-11 00:15:54 | TransportAgent            | INFO     | TransportAgent.search_transports | prompt=Find transport options to reach Mumbai from the starting point on 2025-06-01...
+2026-02-11 00:15:54 | TransportTools            | INFO     | TransportTools.run | query=Find transport options to reach Mumbai from the starting point on 2025-06-01...
+2026-02-11 00:15:54 | MCPClient                 | INFO     | [Transport] Connecting to server: servers.transport_mcp_server
+2026-02-11 00:15:54 | PlannerAgent              | INFO     | weather_node started
+2026-02-11 00:15:54 | WeatherMCPClient          | INFO     | WeatherMCPClient initialized
+2026-02-11 00:15:54 | WeatherTools              | INFO     | WeatherTools initialized | server=servers.weather_mcp_server
+2026-02-11 00:15:54 | WeatherAgent              | INFO     | WeatherAgent initialized
+2026-02-11 00:15:54 | WeatherAgent              | INFO     | WeatherAgent.search_and_format | query=Provide weather forecast for Mumbai from 2025-06-01 to 2025-06-05...
+2026-02-11 00:15:54 | WeatherAgent              | INFO     | WeatherAgent.get_weather | prompt=Provide weather forecast for Mumbai from 2025-06-01 to 2025-06-05...
+2026-02-11 00:15:54 | WeatherTools              | INFO     | WeatherTools.run | query=Provide weather forecast for Mumbai from 2025-06-01 to 2025-06-05...
+2026-02-11 00:15:54 | MCPClient                 | INFO     | [Weather] Connecting to server: servers.weather_mcp_server
+2026-02-11 00:15:56 | RestaurantMCPServer       | INFO     | RestaurantMCPServer initialized | mock_mode=True
+2026-02-11 00:15:56 | RestaurantMCPServer       | INFO     | Starting Restaurant MCP Server
+2026-02-11 00:15:56 | HotelMCPServer            | INFO     | HotelMCPServer initialized | mock_mode=True
+2026-02-11 00:15:56 | HotelMCPServer            | INFO     | Starting Hotel MCP Server
+2026-02-11 00:15:56 | TransportMCPServer        | INFO     | TransportMCPServer initialized | mock_mode=True
+2026-02-11 00:15:56 | EventMCPServer            | INFO     | EventMCPServer initialized | mock_mode=True
+2026-02-11 00:15:56 | EventMCPServer            | INFO     | Starting Event MCP Server
+2026-02-11 00:15:56 | TransportMCPServer        | INFO     | Starting Transport MCP Server
+2026-02-11 00:15:56 | MCPClient                 | INFO     | [Event] Connected with 2 tools:
+2026-02-11 00:15:56 | MCPClient                 | INFO     | [Event] Processing query: Find events happening in Mumbai during 2025-06-01 to 2025-06-05...
+2026-02-11 00:15:56 | WeatherMCPServer          | INFO     | WeatherMCPServer initialized | mock_mode=True
+2026-02-11 00:15:56 | WeatherMCPServer          | INFO     | Starting Weather MCP Server
+2026-02-11 00:15:57 | MCPClient                 | INFO     | [Event] Calling tool: search_events | args={'city': 'Mumbai', 'start_date': '2025-06-01', 'end_date': '2025-06-05'}
+2026-02-11 00:15:57 | MCPClient                 | INFO     | [Restaurant] Connected with 3 tools:
+2026-02-11 00:15:57 | MCPClient                 | INFO     | [Restaurant] Processing query: Find restaurants in Mumbai suitable for ['food'] during 2025-06-01 to 2025-06-05...
+2026-02-11 00:15:57 | EventMCPServer            | INFO     | search_events | city=Mumbai | dates=2025-06-01 to 2025-06-05
+2026-02-11 00:15:57 | EventMCPServer            | INFO     | search_events returned 3 events for Mumbai
+2026-02-11 00:15:57 | MCPClient                 | INFO     | [Restaurant] Calling tool: search_restaurants | args={'location': 'Mumbai', 'term': 'food'}
+2026-02-11 00:15:57 | MCPClient                 | INFO     | [Hotel] Connected with 3 tools:
+2026-02-11 00:15:57 | MCPClient                 | INFO     | [Hotel] Processing query: Find hotels in Mumbai from 2025-06-01 to 2025-06-05 within budget 2000.0...
+2026-02-11 00:15:57 | MCPClient                 | INFO     | [Hotel] Calling tool: search_hotels | args={'location': 'Mumbai', 'checkin_date': '2025-06-01', 'checkout_date': '2025-06-05', 'max_price': 2000.0}
+2026-02-11 00:15:57 | MCPClient                 | INFO     | [Transport] Connected with 4 tools:
+2026-02-11 00:15:57 | MCPClient                 | INFO     | [Transport] Processing query: Find transport options to reach Mumbai from the starting point on 2025-06-01...
+2026-02-11 00:15:57 | MCPClient                 | INFO     | [Transport] Calling tool: search_trains | args={'origin': 'starting point', 'destination': 'Mumbai', 'date': '2025-06-01'}
+2026-02-11 00:15:57 | RestaurantMCPServer       | INFO     | search_restaurants | location=Mumbai | term=food
+2026-02-11 00:15:57 | RestaurantMCPServer       | INFO     | search_restaurants returned 18 results for Mumbai
+2026-02-11 00:15:57 | HotelMCPServer            | INFO     | search_hotels called | location=Mumbai | price=0-2000.0
+2026-02-11 00:15:57 | TransportMCPServer        | INFO     | search_trains | starting point -> Mumbai | date=2025-06-01
+2026-02-11 00:15:57 | MCPClient                 | INFO     | [Event] Tool search_events returned 527 chars
+2026-02-11 00:15:58 | MCPClient                 | INFO     | [Event] Query processed successfully
+2026-02-11 00:15:58 | EventTools                | INFO     | EventTools.run completed | result_len=164
+2026-02-11 00:15:58 | MCPClient                 | INFO     | [Event] Cleaning up connection
+2026-02-11 00:15:58 | MCPClient                 | INFO     | [Weather] Connected with 2 tools:
+2026-02-11 00:15:58 | MCPClient                 | INFO     | [Weather] Processing query: Provide weather forecast for Mumbai from 2025-06-01 to 2025-06-05...
+2026-02-11 00:15:58 | MCPClient                 | INFO     | [Weather] Calling tool: get_weather_forecast | args={'city': 'Mumbai', 'days': 5}
+2026-02-11 00:15:58 | MCPClient                 | INFO     | [Hotel] Tool search_hotels returned 68 chars
+2026-02-11 00:15:58 | MCPClient                 | INFO     | [Hotel] Query processed successfully
+2026-02-11 00:15:58 | HotelTools                | INFO     | HotelTools.run completed | result_len=103
+2026-02-11 00:15:58 | MCPClient                 | INFO     | [Hotel] Cleaning up connection
+2026-02-11 00:15:58 | MCPClient                 | INFO     | [Restaurant] Tool search_restaurants returned 2413 chars
+2026-02-11 00:15:59 | MCPClient                 | INFO     | [Restaurant] Query processed successfully
+2026-02-11 00:15:59 | RestaurantTools           | INFO     | RestaurantTools.run completed | result_len=489
+2026-02-11 00:15:59 | MCPClient                 | INFO     | [Restaurant] Cleaning up connection
+2026-02-11 00:15:59 | MCPClient                 | INFO     | [Transport] Tool search_trains returned 718 chars
+2026-02-11 00:15:59 | MCPClient                 | INFO     | [Transport] Query processed successfully
+2026-02-11 00:15:59 | TransportTools            | INFO     | TransportTools.run completed | result_len=591
+2026-02-11 00:15:59 | MCPClient                 | INFO     | [Transport] Cleaning up connection
+2026-02-11 00:15:59 | EventAgent                | INFO     | EventAgent.search_events completed
+2026-02-11 00:15:59 | WeatherMCPServer          | INFO     | get_weather_forecast | city=Mumbai | days=5
+2026-02-11 00:15:59 | WeatherMCPServer          | INFO     | get_weather_forecast returned data for Mumbai
+2026-02-11 00:16:00 | EventAgent                | INFO     | EventAgent.search_and_format completed | success=False
+2026-02-11 00:16:00 | PlannerAgent              | INFO     | event_node completed successfully
+2026-02-11 00:16:00 | MCPClient                 | INFO     | [Weather] Tool get_weather_forecast returned 100 chars
+2026-02-11 00:16:00 | MCPClient                 | INFO     | [Weather] Query processed successfully
+2026-02-11 00:16:00 | WeatherTools              | INFO     | WeatherTools.run completed | result_len=203
+2026-02-11 00:16:00 | MCPClient                 | INFO     | [Weather] Cleaning up connection
+2026-02-11 00:16:00 | TransportAgent            | INFO     | TransportAgent.search_transports completed
+2026-02-11 00:16:00 | TransportAgent            | INFO     | TransportAgent.search_and_format completed | success=True
+2026-02-11 00:16:00 | PlannerAgent              | INFO     | transport_node completed successfully
+2026-02-11 00:16:00 | RestaurantAgent           | INFO     | RestaurantAgent.search_restaurants completed
+2026-02-11 00:16:01 | RestaurantAgent           | INFO     | RestaurantAgent.search_and_format completed | success=True
+2026-02-11 00:16:01 | PlannerAgent              | INFO     | restaurant_node completed successfully
+2026-02-11 00:16:01 | HotelAgent                | INFO     | HotelAgent.search_hotels completed
+2026-02-11 00:16:01 | HotelAgent                | INFO     | HotelAgent.search_and_format completed | success=False
+2026-02-11 00:16:01 | PlannerAgent              | INFO     | hotel_node completed successfully
+2026-02-11 00:16:02 | WeatherAgent              | INFO     | WeatherAgent.get_weather completed
+2026-02-11 00:16:02 | WeatherAgent              | INFO     | WeatherAgent.search_and_format completed | success=True
+2026-02-11 00:16:02 | PlannerAgent              | INFO     | weather_node completed successfully
+2026-02-11 00:16:02 | PlannerAgent              | INFO     | re_planner_node entered | retry_count=0/3
+2026-02-11 00:16:02 | ReplanAgent               | INFO     | ReplanAgent initialized
+2026-02-11 00:16:02 | ReplanAgent               | INFO     | ReplanAgent.analyze_planner_state called
+2026-02-11 00:16:03 | ReplanAgent               | INFO     | ReplanAgent decision | done=False | retries=['hotel', 'transport', 'event'] | notes=The current budget of $2000.0 is insufficient for hotel bookings in Mumbai. The transport options pr...
+2026-02-11 00:16:03 | PlannerAgent              | INFO     | re_planner_node decision | done=False | retries=['hotel', 'transport', 'event'] | notes=The current budget of $2000.0 is insufficient for hotel bookings in Mumbai. The transport options pr...
+2026-02-11 00:16:03 | PlannerAgent              | INFO     | route_after_replanner -> coordinator | retries=['hotel', 'transport', 'event']
+2026-02-11 00:16:03 | PlannerAgent              | INFO     | coordinator_node entered
+2026-02-11 00:16:03 | PlannerAgent              | INFO     | coordinator_node | retry_count=1 | retries=['hotel', 'transport', 'event']
+2026-02-11 00:16:03 | PlannerAgent              | INFO     | event_node started
+2026-02-11 00:16:03 | EventMCPClient            | INFO     | EventMCPClient initialized
+2026-02-11 00:16:03 | EventTools                | INFO     | EventTools initialized | server=servers.event_mcp_server
+2026-02-11 00:16:03 | EventAgent                | INFO     | EventAgent initialized
+2026-02-11 00:16:03 | EventAgent                | INFO     | EventAgent.search_and_format | query=Find events happening in Mumbai during 2025-06-01 to 2025-06-05...
+2026-02-11 00:16:03 | EventAgent                | INFO     | EventAgent.search_events | prompt=Find events happening in Mumbai during 2025-06-01 to 2025-06-05...
+2026-02-11 00:16:03 | EventTools                | INFO     | EventTools.run | query=Find events happening in Mumbai during 2025-06-01 to 2025-06-05...
+2026-02-11 00:16:03 | MCPClient                 | INFO     | [Event] Connecting to server: servers.event_mcp_server
+2026-02-11 00:16:03 | PlannerAgent              | INFO     | hotel_node started
+2026-02-11 00:16:03 | HotelMCPClient            | INFO     | HotelMCPClient initialized
+2026-02-11 00:16:03 | HotelTools                | INFO     | HotelTools initialized | server=servers.hotel_mcp_server
+2026-02-11 00:16:03 | HotelAgent                | INFO     | HotelAgent initialized
+2026-02-11 00:16:03 | HotelAgent                | INFO     | HotelAgent.search_and_format | query=Find hotels in Mumbai from 2025-06-01 to 2025-06-05 within budget 2000.0...
+2026-02-11 00:16:03 | HotelAgent                | INFO     | HotelAgent.search_hotels | prompt=Find hotels in Mumbai from 2025-06-01 to 2025-06-05 within budget 2000.0...
+2026-02-11 00:16:03 | HotelTools                | INFO     | HotelTools.run | query=Find hotels in Mumbai from 2025-06-01 to 2025-06-05 within budget 2000.0...
+2026-02-11 00:16:03 | MCPClient                 | INFO     | [Hotel] Connecting to server: servers.hotel_mcp_server
+2026-02-11 00:16:03 | PlannerAgent              | INFO     | transport_node started
+2026-02-11 00:16:03 | TransportMCPClient        | INFO     | TransportMCPClient initialized
+2026-02-11 00:16:03 | TransportTools            | INFO     | TransportTools initialized | server=servers.transport_mcp_server
+2026-02-11 00:16:03 | TransportAgent            | INFO     | TransportAgent initialized
+2026-02-11 00:16:03 | TransportAgent            | INFO     | TransportAgent.search_and_format | query=Find transport options to reach Mumbai from the starting point on 2025-06-01...
+2026-02-11 00:16:03 | TransportAgent            | INFO     | TransportAgent.search_transports | prompt=Find transport options to reach Mumbai from the starting point on 2025-06-01...
+2026-02-11 00:16:03 | TransportTools            | INFO     | TransportTools.run | query=Find transport options to reach Mumbai from the starting point on 2025-06-01...
+2026-02-11 00:16:03 | MCPClient                 | INFO     | [Transport] Connecting to server: servers.transport_mcp_server
+2026-02-11 00:16:03 | EventMCPServer            | INFO     | EventMCPServer initialized | mock_mode=True
+2026-02-11 00:16:03 | TransportMCPServer        | INFO     | TransportMCPServer initialized | mock_mode=True
+2026-02-11 00:16:03 | HotelMCPServer            | INFO     | HotelMCPServer initialized | mock_mode=True
+2026-02-11 00:16:03 | EventMCPServer            | INFO     | Starting Event MCP Server
+2026-02-11 00:16:03 | TransportMCPServer        | INFO     | Starting Transport MCP Server
+2026-02-11 00:16:03 | HotelMCPServer            | INFO     | Starting Hotel MCP Server
+2026-02-11 00:16:03 | MCPClient                 | INFO     | [Event] Connected with 2 tools:
+2026-02-11 00:16:03 | MCPClient                 | INFO     | [Event] Processing query: Find events happening in Mumbai during 2025-06-01 to 2025-06-05...
+2026-02-11 00:16:04 | MCPClient                 | INFO     | [Event] Calling tool: search_events | args={'city': 'Mumbai', 'start_date': '2025-06-01', 'end_date': '2025-06-05'}
+2026-02-11 00:16:04 | MCPClient                 | INFO     | [Transport] Connected with 4 tools:
+2026-02-11 00:16:04 | MCPClient                 | INFO     | [Transport] Processing query: Find transport options to reach Mumbai from the starting point on 2025-06-01...
+2026-02-11 00:16:04 | EventMCPServer            | INFO     | search_events | city=Mumbai | dates=2025-06-01 to 2025-06-05
+2026-02-11 00:16:04 | EventMCPServer            | INFO     | search_events returned 3 events for Mumbai
+2026-02-11 00:16:04 | MCPClient                 | INFO     | [Transport] Calling tool: search_trains | args={'origin': 'starting point', 'destination': 'Mumbai', 'date': '2025-06-01'}
+2026-02-11 00:16:04 | MCPClient                 | INFO     | [Hotel] Connected with 3 tools:
+2026-02-11 00:16:04 | MCPClient                 | INFO     | [Hotel] Processing query: Find hotels in Mumbai from 2025-06-01 to 2025-06-05 within budget 2000.0...
+2026-02-11 00:16:05 | MCPClient                 | INFO     | [Hotel] Calling tool: search_hotels | args={'location': 'Mumbai', 'checkin_date': '2025-06-01', 'checkout_date': '2025-06-05', 'max_price': 2000.0}
+2026-02-11 00:16:05 | MCPClient                 | INFO     | [Event] Tool search_events returned 527 chars
+2026-02-11 00:16:05 | TransportMCPServer        | INFO     | search_trains | starting point -> Mumbai | date=2025-06-01
+2026-02-11 00:16:05 | HotelMCPServer            | INFO     | search_hotels called | location=Mumbai | price=0-2000.0
+2026-02-11 00:16:05 | MCPClient                 | INFO     | [Event] Query processed successfully
+2026-02-11 00:16:05 | EventTools                | INFO     | EventTools.run completed | result_len=161
+2026-02-11 00:16:05 | MCPClient                 | INFO     | [Event] Cleaning up connection
+2026-02-11 00:16:05 | MCPClient                 | INFO     | [Transport] Tool search_trains returned 718 chars
+2026-02-11 00:16:06 | MCPClient                 | INFO     | [Transport] Query processed successfully
+2026-02-11 00:16:06 | TransportTools            | INFO     | TransportTools.run completed | result_len=698
+2026-02-11 00:16:06 | MCPClient                 | INFO     | [Transport] Cleaning up connection
+2026-02-11 00:16:06 | MCPClient                 | INFO     | [Hotel] Tool search_hotels returned 68 chars
+2026-02-11 00:16:06 | MCPClient                 | INFO     | [Hotel] Query processed successfully
+2026-02-11 00:16:06 | HotelTools                | INFO     | HotelTools.run completed | result_len=103
+2026-02-11 00:16:06 | MCPClient                 | INFO     | [Hotel] Cleaning up connection
+2026-02-11 00:16:06 | EventAgent                | INFO     | EventAgent.search_events completed
+2026-02-11 00:16:06 | EventAgent                | INFO     | EventAgent.search_and_format completed | success=False
+2026-02-11 00:16:06 | PlannerAgent              | INFO     | event_node completed successfully
+2026-02-11 00:16:06 | HotelAgent                | INFO     | HotelAgent.search_hotels completed
+2026-02-11 00:16:07 | HotelAgent                | INFO     | HotelAgent.search_and_format completed | success=False
+2026-02-11 00:16:07 | PlannerAgent              | INFO     | hotel_node completed successfully
+2026-02-11 00:16:07 | TransportAgent            | INFO     | TransportAgent.search_transports completed
+2026-02-11 00:16:08 | TransportAgent            | INFO     | TransportAgent.search_and_format completed | success=True
+2026-02-11 00:16:08 | PlannerAgent              | INFO     | transport_node completed successfully
+2026-02-11 00:16:08 | PlannerAgent              | INFO     | re_planner_node entered | retry_count=1/3
+2026-02-11 00:16:08 | ReplanAgent               | INFO     | ReplanAgent initialized
+2026-02-11 00:16:08 | ReplanAgent               | INFO     | ReplanAgent.analyze_planner_state called
+2026-02-11 00:16:16 | ReplanAgent               | INFO     | ReplanAgent decision | done=False | retries=['hotel', 'event'] | notes=Hotel and event agents failed to provide results within the given budget and dates. Adjusting budget...
+2026-02-11 00:16:16 | PlannerAgent              | INFO     | re_planner_node decision | done=False | retries=['hotel', 'event'] | notes=Hotel and event agents failed to provide results within the given budget and dates. Adjusting budget...
+2026-02-11 00:16:16 | PlannerAgent              | INFO     | route_after_replanner -> coordinator | retries=['hotel', 'event']
+2026-02-11 00:16:16 | PlannerAgent              | INFO     | coordinator_node entered
+2026-02-11 00:16:16 | PlannerAgent              | INFO     | coordinator_node | retry_count=2 | retries=['hotel', 'event']
+2026-02-11 00:16:16 | PlannerAgent              | INFO     | event_node started
+2026-02-11 00:16:16 | EventMCPClient            | INFO     | EventMCPClient initialized
+2026-02-11 00:16:16 | EventTools                | INFO     | EventTools initialized | server=servers.event_mcp_server
+2026-02-11 00:16:16 | EventAgent                | INFO     | EventAgent initialized
+2026-02-11 00:16:16 | EventAgent                | INFO     | EventAgent.search_and_format | query=Find events happening in Mumbai during 2025-06-01 to 2025-06-05...
+2026-02-11 00:16:16 | EventAgent                | INFO     | EventAgent.search_events | prompt=Find events happening in Mumbai during 2025-06-01 to 2025-06-05...
+2026-02-11 00:16:16 | EventTools                | INFO     | EventTools.run | query=Find events happening in Mumbai during 2025-06-01 to 2025-06-05...
+2026-02-11 00:16:16 | MCPClient                 | INFO     | [Event] Connecting to server: servers.event_mcp_server
+2026-02-11 00:16:16 | PlannerAgent              | INFO     | hotel_node started
+2026-02-11 00:16:16 | HotelMCPClient            | INFO     | HotelMCPClient initialized
+2026-02-11 00:16:16 | HotelTools                | INFO     | HotelTools initialized | server=servers.hotel_mcp_server
+2026-02-11 00:16:16 | HotelAgent                | INFO     | HotelAgent initialized
+2026-02-11 00:16:16 | HotelAgent                | INFO     | HotelAgent.search_and_format | query=Find hotels in Mumbai from 2025-06-01 to 2025-06-05 within budget 2000.0...
+2026-02-11 00:16:16 | HotelAgent                | INFO     | HotelAgent.search_hotels | prompt=Find hotels in Mumbai from 2025-06-01 to 2025-06-05 within budget 2000.0...
+2026-02-11 00:16:16 | HotelTools                | INFO     | HotelTools.run | query=Find hotels in Mumbai from 2025-06-01 to 2025-06-05 within budget 2000.0...
+2026-02-11 00:16:16 | MCPClient                 | INFO     | [Hotel] Connecting to server: servers.hotel_mcp_server
+2026-02-11 00:16:16 | HotelMCPServer            | INFO     | HotelMCPServer initialized | mock_mode=True
+2026-02-11 00:16:16 | EventMCPServer            | INFO     | EventMCPServer initialized | mock_mode=True
+2026-02-11 00:16:16 | HotelMCPServer            | INFO     | Starting Hotel MCP Server
+2026-02-11 00:16:16 | EventMCPServer            | INFO     | Starting Event MCP Server
+2026-02-11 00:16:16 | MCPClient                 | INFO     | [Event] Connected with 2 tools:
+2026-02-11 00:16:16 | MCPClient                 | INFO     | [Event] Processing query: Find events happening in Mumbai during 2025-06-01 to 2025-06-05...
+2026-02-11 00:16:17 | MCPClient                 | INFO     | [Event] Calling tool: search_events | args={'city': 'Mumbai', 'start_date': '2025-06-01', 'end_date': '2025-06-05'}
+2026-02-11 00:16:17 | MCPClient                 | INFO     | [Hotel] Connected with 3 tools:
+2026-02-11 00:16:17 | MCPClient                 | INFO     | [Hotel] Processing query: Find hotels in Mumbai from 2025-06-01 to 2025-06-05 within budget 2000.0...
+2026-02-11 00:16:17 | EventMCPServer            | INFO     | search_events | city=Mumbai | dates=2025-06-01 to 2025-06-05
+2026-02-11 00:16:17 | EventMCPServer            | INFO     | search_events returned 3 events for Mumbai
+2026-02-11 00:16:21 | MCPClient                 | INFO     | [Hotel] Calling tool: search_hotels | args={'location': 'Mumbai', 'checkin_date': '2025-06-01', 'checkout_date': '2025-06-05', 'max_price': 2000.0}
+2026-02-11 00:16:21 | HotelMCPServer            | INFO     | search_hotels called | location=Mumbai | price=0-2000.0
+2026-02-11 00:16:21 | MCPClient                 | INFO     | [Event] Tool search_events returned 527 chars
+2026-02-11 00:16:22 | MCPClient                 | INFO     | [Event] Query processed successfully
+2026-02-11 00:16:22 | EventTools                | INFO     | EventTools.run completed | result_len=164
+2026-02-11 00:16:22 | MCPClient                 | INFO     | [Event] Cleaning up connection
+2026-02-11 00:16:22 | MCPClient                 | INFO     | [Hotel] Tool search_hotels returned 68 chars
+2026-02-11 00:16:23 | MCPClient                 | INFO     | [Hotel] Query processed successfully
+2026-02-11 00:16:23 | HotelTools                | INFO     | HotelTools.run completed | result_len=103
+2026-02-11 00:16:23 | MCPClient                 | INFO     | [Hotel] Cleaning up connection
+2026-02-11 00:16:23 | EventAgent                | INFO     | EventAgent.search_events completed
+2026-02-11 00:16:25 | EventAgent                | INFO     | EventAgent.search_and_format completed | success=False
+2026-02-11 00:16:25 | PlannerAgent              | INFO     | event_node completed successfully
+2026-02-11 00:16:25 | HotelAgent                | INFO     | HotelAgent.search_hotels completed
+2026-02-11 00:16:27 | HotelAgent                | INFO     | HotelAgent.search_and_format completed | success=False
+2026-02-11 00:16:27 | PlannerAgent              | INFO     | hotel_node completed successfully
+2026-02-11 00:16:27 | PlannerAgent              | INFO     | re_planner_node entered | retry_count=2/3
+2026-02-11 00:16:27 | ReplanAgent               | INFO     | ReplanAgent initialized
+2026-02-11 00:16:27 | ReplanAgent               | INFO     | ReplanAgent.analyze_planner_state called
+2026-02-11 00:16:34 | ReplanAgent               | INFO     | ReplanAgent decision | done=False | retries=['hotel', 'event'] | notes=Hotel and event agents failed to provide results within the given budget and dates. Adjusting budget...
+2026-02-11 00:16:34 | PlannerAgent              | INFO     | re_planner_node decision | done=False | retries=['hotel', 'event'] | notes=Hotel and event agents failed to provide results within the given budget and dates. Adjusting budget...
+2026-02-11 00:16:34 | PlannerAgent              | INFO     | route_after_replanner -> aggregator | done=False | retry_count=3
+2026-02-11 00:16:34 | PlannerAgent              | INFO     | aggregator_node entered
+2026-02-11 00:16:34 | PlannerAgent              | INFO     | aggregator_node completed — plan assembled
+2026-02-11 00:16:34 | PlannerAgent              | INFO     | itinerary_node entered
+2026-02-11 00:16:34 | ItineraryAgent            | INFO     | ItineraryAgent initialized
+2026-02-11 00:16:34 | ItineraryAgent            | INFO     | ItineraryAgent.generate_detailed_itinerary called
+2026-02-11 00:16:44 | ItineraryAgent            | INFO     | ItineraryAgent generated itinerary | length=4901
+2026-02-11 00:16:44 | ItineraryAgent            | INFO     | Generated 5 key recommendations
+2026-02-11 00:16:44 | PlannerAgent              | INFO     | itinerary_node completed successfully
+2026-02-11 00:16:44 | Main                      | INFO     | Plan complete | destination=Mumbai | retries=3
+2026-02-11 00:19:13 | Main                      | INFO     | Odysya shutting down
