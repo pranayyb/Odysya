@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
-from typing import Any
 from models.trip_request import TripRequest
+from models.planner_state import PlannerState
 from utils.validator import validate_trip_request
 from utils.logger import get_logger
 from agents.planner_agent import travel_planner
@@ -40,20 +40,7 @@ async def plan_trip(request: TripRequest):
         logger.error(f"Validation failed | error={e}")
         raise HTTPException(status_code=422, detail=str(e))
 
-    initial_state: dict[str, Any] = {
-        "trip": trip,
-        "retries": [],
-        "retry_count": 0,
-        "done": False,
-        "notes": "",
-        "hotel_result": None,
-        "transport_result": None,
-        "restaurant_result": None,
-        "weather_result": None,
-        "event_result": None,
-        "aggregated_plan": None,
-        "final_itinerary": None,
-    }
+    initial_state = PlannerState.create(trip)
 
     try:
         logger.info("Invoking travel planner graph...")

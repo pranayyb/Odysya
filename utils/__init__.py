@@ -6,7 +6,7 @@ from .error_handler import (
     ServerError,
     handle_error,
 )
-from .http_client import get, async_get
+from .http_client import async_get
 from .logger import get_logger
 from .validator import validate_trip_request
 

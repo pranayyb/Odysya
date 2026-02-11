@@ -10,9 +10,9 @@ Include specific timings, transportation between locations, meal recommendations
 and practical tips. Format your response as a detailed, structured itinerary.
 
 CRITICAL RULES:
-- ONLY use hotels, restaurants, transport options, events, and weather data that are explicitly 
+- ONLY use hotels, restaurants, transport options, events, tourist places, and weather data that are explicitly 
   provided in the AVAILABLE OPTIONS section below. Do NOT invent or hallucinate any venue names, 
-  restaurants, hotels, prices, or events that are not listed.
+  restaurants, hotels, places, prices, or events that are not listed.
 - If a category says "No specific options available", acknowledge it and suggest the traveler 
   research options upon arrival, but do NOT fabricate specific names or details.
 - Reference the provided options BY NAME and include their actual prices, ratings, and details.
@@ -114,6 +114,9 @@ RESTAURANTS:
 EVENTS & ACTIVITIES:
 {_format_data_section(data.events)}
 
+PLACES & ATTRACTIONS:
+{_format_data_section(data.attractions)}
+
 WEATHER:
 {_format_data_section(data.weather)}
 
@@ -128,7 +131,7 @@ REQUIREMENTS:
 8. Add practical tips and local insights
 9. Suggest optimal routes and timing
 10. Include rest periods and buffer time
-11. ONLY reference hotels, restaurants, events, and transport that appear in AVAILABLE OPTIONS above
+11. ONLY reference hotels, restaurants, events, tourist places, and transport that appear in AVAILABLE OPTIONS above
 12. If data is missing for a category, say so — do NOT make up names or details
 
 Format as:

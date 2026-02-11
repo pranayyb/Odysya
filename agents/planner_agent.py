@@ -1,7 +1,7 @@
 import asyncio
 from typing import Any
 from langgraph.graph import StateGraph, START, END
-from agents import HotelAgent, TransportAgent, WeatherAgent, EventAgent, RestaurantAgent
+from agents import HotelAgent, TransportAgent, WeatherAgent, EventAgent, RestaurantAgent, AttractionAgent
 from agents.replanner_agent import ReplanAgent
 from agents.itinerary_agent import ItineraryAgent
 from config import MAX_AGENT_RETRIES
@@ -232,6 +232,42 @@ async def event_node(state: PlannerState) -> dict[str, Any]:
         }
 
 
+async def attraction_node(state: PlannerState) -> dict[str, Any]:
+    retries = state.get("retries", [])
+    if state.get("attraction_result") and "attraction" not in retries:
+        logger.debug("attraction_node skipped — result exists and no retry requested")
+        return {}
+
+    logger.info("attraction_node started")
+    try:
+        attraction_agent = AttractionAgent()
+        preferences = ", ".join(state["trip"].preferences) if state["trip"].preferences else "general sightseeing"
+        query = (
+            f"Find popular tourist attractions in {state['trip'].destination} "
+            f"for preferences: {preferences}"
+        )
+        response = await attraction_agent.search_and_format(query)
+        logger.info("attraction_node completed successfully")
+        return {
+            "attraction_result": AgentResponse(
+                agent_name="attraction",
+                success=True,
+                data=(
+                    response.model_dump()
+                    if hasattr(response, "model_dump")
+                    else response
+                ),
+            )
+        }
+    except Exception as e:
+        logger.error(f"attraction_node failed | error={e}")
+        return {
+            "attraction_result": AgentResponse(
+                agent_name="attraction", success=False, data=None, error=str(e)
+            )
+        }
+
+
 def aggregator_node(state: PlannerState) -> dict[str, Any]:
     logger.info("aggregator_node entered")
 
@@ -241,6 +277,7 @@ def aggregator_node(state: PlannerState) -> dict[str, Any]:
         "restaurant_result",
         "weather_result",
         "event_result",
+        "attraction_result",
     ]
     for key in result_keys:
         result = state.get(key)
@@ -274,6 +311,11 @@ def aggregator_node(state: PlannerState) -> dict[str, Any]:
         events=(
             state.get("event_result").data
             if state.get("event_result") and state.get("event_result").data
+            else ["No results available"]
+        ),
+        attractions=(
+            state.get("attraction_result").data
+            if state.get("attraction_result") and state.get("attraction_result").data
             else ["No results available"]
         ),
     )
@@ -334,6 +376,7 @@ graph.add_node("hotels", hotel_node)
 graph.add_node("restaurants", restaurant_node)
 graph.add_node("weather", weather_node)
 graph.add_node("events", event_node)
+graph.add_node("attractions", attraction_node)
 graph.add_node("aggregator", aggregator_node)
 graph.add_node("replanner", re_planner_node)
 graph.add_node("itinerary", itinerary_node)
@@ -345,12 +388,14 @@ graph.add_edge("coordinator", "hotels")
 graph.add_edge("coordinator", "restaurants")
 graph.add_edge("coordinator", "weather")
 graph.add_edge("coordinator", "events")
+graph.add_edge("coordinator", "attractions")
 
 graph.add_edge("transport", "replanner")
 graph.add_edge("hotels", "replanner")
 graph.add_edge("restaurants", "replanner")
 graph.add_edge("weather", "replanner")
 graph.add_edge("events", "replanner")
+graph.add_edge("attractions", "replanner")
 
 graph.add_conditional_edges(
     "replanner",

@@ -10,7 +10,7 @@ REPLANNER_SYSTEM_PROMPT = """You are a ReAct trip planning agent. Follow this pr
 2. ACT: Identify specific issues and determine what needs improvement
 3. DECIDE: Make concrete decisions about which agents to rerun and what adjustments to make
 
-Be specific and actionable in your decisions. Use exact agent names: 'hotel', 'transport', 'restaurant', 'weather', 'event'.
+Be specific and actionable in your decisions. Use exact agent names: 'hotel', 'transport', 'restaurant', 'weather', 'event', 'attraction'.
 
 Rules:
 - If an agent failed, always add it to retries.
@@ -42,6 +42,7 @@ AGENT RESULTS STATUS:
         ("Restaurant", "restaurant_result"),
         ("Weather", "weather_result"),
         ("Event", "event_result"),
+        ("Attraction", "attraction_result"),
     ]:
         result = state.get(result_key)
         if result:
@@ -62,7 +63,7 @@ MAX RETRIES ALLOWED: 3
 THINK: What issues do you see with the current results?
 ACT: Which specific problems need to be addressed?
 DECIDE:
-1. Which agents need to be rerun? (use exact names: 'hotel', 'transport', 'restaurant', 'weather', 'event')
+1. Which agents need to be rerun? (use exact names: 'hotel', 'transport', 'restaurant', 'weather', 'event', 'attraction')
 2. What adjustments to trip parameters are needed?
 3. What specific issues were identified?
 4. Is the planning complete (done=true) or should we continue (done=false)?

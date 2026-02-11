@@ -10,4 +10,5 @@ class Itinerary(BaseModel):
     restaurants: Any = []
     transport: Any = []
     events: Any = []
+    attractions: Any = []
     weather: Any = []

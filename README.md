@@ -4,20 +4,21 @@
 ![LangChain](https://img.shields.io/badge/langchain-v0.3+-green.svg)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 
-**Odysya** is an AI-powered travel planning system that creates personalized travel itineraries. Built with LangGraph and served via FastAPI, it uses a multi-agent architecture to coordinate hotels, restaurants, transportation, events, and weather data — then synthesizes everything into a detailed day-by-day itinerary.
+**Odysya** is an AI-powered travel planning system that creates personalized travel itineraries. Built with LangGraph and served via FastAPI, it uses a multi-agent architecture to coordinate hotels, restaurants, transportation, events, attractions, and weather data — then synthesizes everything into a detailed day-by-day itinerary.
 
 ## Features
 
 ### Multi-Agent Orchestration
-Five specialized domain agents run **in parallel** via a LangGraph StateGraph, each handling a different aspect of trip planning:
+Six specialized domain agents run **in parallel** via a LangGraph StateGraph, each handling a different aspect of trip planning:
 
 - **Hotel Agent** — Searches accommodations by location, dates, budget, and amenities. Integrates with Booking.com (RapidAPI).
 - **Transport Agent** — Finds flights, trains, and buses to the destination with pricing and schedules.
 - **Restaurant Agent** — Discovers dining options matching cuisine preferences and budget. Integrates with Yelp.
 - **Weather Agent** — Provides day-by-day weather forecasts to plan weather-appropriate activities. Integrates with OpenWeatherMap.
 - **Event Agent** — Finds local events, festivals, and activities happening during the travel dates.
+- **Attraction Agent** — Discovers tourist attractions, monuments, temples, beaches, parks, and museums at the destination.
 
-A sixth agent, the **Itinerary Agent**, synthesizes all collected data into a detailed day-by-day schedule with specific timings, costs, and backup plans.
+A seventh agent, the **Itinerary Agent**, synthesizes all collected data into a detailed day-by-day schedule with specific timings, costs, and backup plans.
 
 ### Intelligent Replanning
 - **LLM-Powered ReAct Analysis** — The ReplanAgent uses a **Think → Act → Decide** methodology to evaluate all agent results against the trip requirements.
@@ -52,7 +53,7 @@ A sixth agent, the **Itinerary Agent**, synthesizes all collected data into a de
 - **FastAPI REST Endpoint** — `POST /plan` accepts a `TripRequest` and returns a structured JSON response with the itinerary, recommendations, retry count, and notes.
 - **Input Validation** — Pydantic-based validation of destination, dates, preferences, and budget with clear error messages.
 - **Health Check** — `GET /health` for monitoring and load balancer readiness.
-- **ABC-Based Contracts** — `MCPServer`, `MCPClient`, and `AgentToolInterface` abstract base classes ensure consistent patterns across all 5 domains, making it easy to add new agents.
+- **ABC-Based Contracts** — `MCPServer`, `MCPClient`, and `AgentToolInterface` abstract base classes ensure consistent patterns across all 6 domains, making it easy to add new agents.
 
 ## Architecture
 
@@ -67,18 +68,20 @@ graph TD
     B --> E[Restaurant Agent]
     B --> F[Weather Agent]
     B --> G[Event Agent]
+    B --> H[Attraction Agent]
 
-    C --> H[Replanner]
-    D --> H
-    E --> H
-    F --> H
-    G --> H
+    C --> I[Replanner]
+    D --> I
+    E --> I
+    F --> I
+    G --> I
+    H --> I
 
-    H -->|Retries needed & under limit| B
-    H -->|All done or max retries| I[Aggregator]
+    I -->|Retries needed & under limit| B
+    I -->|All done or max retries| J[Aggregator]
 
-    I --> J[Itinerary Agent]
-    J --> K[Final Itinerary]
+    J --> K[Itinerary Agent]
+    K --> L[Final Itinerary]
 ```
 
 ### Data Flow
@@ -145,6 +148,7 @@ TripRequest → Coordinator → Agents (parallel) → MCP Clients → MCP Server
    OPENWEATHER_API_KEY=
    EVENTS_API_KEY=
    TRANSPORT_API_KEY=
+   ATTRACTION_API_KEY=
    ```
 
 ### Running
@@ -219,6 +223,7 @@ All configuration is in `config.py` and can be overridden with environment varia
 | `RESTAURANT_MOCK` | `True` | Use mock restaurant data |
 | `WEATHER_MOCK` | `True` | Use mock weather data |
 | `EVENT_MOCK` | `True` | Use mock event data |
+| `ATTRACTION_MOCK` | `True` | Use mock attraction data |
 
 ## Project Structure
 
@@ -235,25 +240,29 @@ odysya/
 │   ├── restaurant_agent.py # Restaurant search + structured output
 │   ├── transport_agent.py  # Transport search + structured output
 │   ├── weather_agent.py    # Weather forecast + structured output
-│   └── event_agent.py      # Event search + structured output
+│   ├── event_agent.py      # Event search + structured output
+│   └── attraction_agent.py # Attraction search + structured output
 ├── clients/                # MCP clients (connect to servers via stdio)
 │   ├── hotel_mcp_client.py
 │   ├── restaurant_mcp_client.py
 │   ├── transport_mcp_client.py
 │   ├── weather_mcp_client.py
-│   └── event_mcp_client.py
+│   ├── event_mcp_client.py
+│   └── attraction_mcp_client.py
 ├── servers/                # MCP servers (expose tools, fetch data)
 │   ├── hotel_mcp_server.py
 │   ├── restaurant_mcp_server.py
 │   ├── transport_mcp_server.py
 │   ├── weather_mcp_server.py
-│   └── event_mcp_server.py
+│   ├── event_mcp_server.py
+│   └── attraction_mcp_server.py
 ├── tools/                  # Tool wrappers connecting agents to MCP clients
 │   ├── hotel_tools.py
 │   ├── restaurant_tools.py
 │   ├── transport_tools.py
 │   ├── weather_tools.py
-│   └── event_tools.py
+│   ├── event_tools.py
+│   └── attraction_tools.py
 ├── models/                 # Pydantic data models
 │   ├── trip_request.py     # Input request schema
 │   ├── planner_state.py    # LangGraph state definition
@@ -264,7 +273,8 @@ odysya/
 │   ├── restaurant.py       # Restaurant/RestaurantItem models
 │   ├── transport.py        # Transport/TransportItem models
 │   ├── weather.py          # Weather/WeatherItem models
-│   └── event.py            # Event/EventItem models
+│   ├── event.py            # Event/EventItem models
+│   └── attraction.py       # Attraction/AttractionItem models
 ├── interfaces/             # Abstract base classes
 │   ├── mcp_client_interface.py  # Base MCP client with LLM tool selection
 │   ├── mcp_server_interface.py  # Base MCP server interface
@@ -283,7 +293,8 @@ odysya/
 │   ├── restaurant_data.py
 │   ├── transport_data.py
 │   ├── weather_data.py
-│   └── events_data.py
+│   ├── events_data.py
+│   └── attractions_data.py
 └── logs/                   # Application logs (gitignored)
 ```
 
